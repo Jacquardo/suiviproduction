@@ -1,0 +1,32 @@
+[
+  {
+    "id": "prog_001",
+    "date": "2026-06-22",
+    "agentId": "k1001",
+    "activity": "Relance J+7",
+    "target": 40,
+    "priority": "haute",
+    "message": "Priorité aujourd’hui sur les relances J+7.",
+    "updatedBy": "sedra.k1736@keobiz.fr"
+  },
+  {
+    "id": "prog_002",
+    "date": "2026-06-22",
+    "agentId": "k1002",
+    "activity": "Traitement dossier",
+    "target": 45,
+    "priority": "normale",
+    "message": "Suivre le planning habituel et vérifier les dossiers urgents.",
+    "updatedBy": "sedra.k1736@keobiz.fr"
+  },
+  {
+    "id": "prog_003",
+    "date": "2026-06-22",
+    "agentId": "k1004",
+    "activity": "Appel sortant",
+    "target": 30,
+    "priority": "normale",
+    "message": "Effectuer les appels sortants avant 16h.",
+    "updatedBy": "sedra.k1736@keobiz.fr"
+  }
+]
