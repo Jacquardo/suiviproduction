@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Suivi Production ARC+</title>
+
+  <link rel="stylesheet" href="./css/style.css" />
+  <link rel="manifest" href="./manifest.json" />
+
+  <meta name="theme-color" content="#2563eb" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-content">
+      <h1>Suivi Production ARC+</h1>
+      <p>Application de suivi de production pour managers et agents</p>
+    </div>
+  </header>
+
+  <main class="home-container">
+    <section class="welcome-card">
+      <h2>Bienvenue</h2>
+      <p>
+        Cette application permet de suivre la production, consulter les programmes,
+        visualiser les indicateurs et accéder aux espaces dédiés.
+      </p>
+    </section>
+
+    <section class="access-grid">
+      <a href="./admin.html" class="access-card admin-card">
+        <div class="card-icon">👨‍💼</div>
+        <h3>Espace administrateur</h3>
+        <p>
+          Import Excel, tableau global, indicateurs, filtres et gestion des programmes agents.
+        </p>
+        <span class="card-button">Accéder</span>
+      </a>
+
+      <a href="#" class="access-card user-card">
+        <div class="card-icon">👤</div>
+        <h3>Espace utilisateur</h3>
+        <p>
+          Tableau personnel, programme du jour et indicateurs simples.
+        </p>
+        <span class="card-button disabled">Bientôt disponible</span>
+      </a>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>Suivi Production ARC+ - Version prototype</p>
+  </footer>
+
+  <script src="./js/app.js"></script>
+</body>
+</html>
