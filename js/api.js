@@ -49,6 +49,14 @@ const DEFAULT_AGENTS = [
     team: "ARC+",
     role: "agent",
     active: false
+  },
+  {
+    id: "k1004",
+    name: "Agent 4",
+    email: "agent4@keobiz.fr",
+    team: "ARC+",
+    role: "agent",
+    active: true
   }
 ];
 
