@@ -1,0 +1,27 @@
+suiviproduction/
+│
+├── index.html
+├── admin.html
+│
+├── css/
+│   ├── style.css
+│   └── admin.css
+│
+├── js/
+│   ├── app.js
+│   ├── admin.js
+│   ├── api.js
+│   └── excel-import.js
+│
+├── data/
+│   ├── agents.json
+│   ├── production.json
+│   └── programmes.json
+│
+├── assets/
+│   ├── logo.png
+│   ├── icon-192.png
+│   └── icon-512.png
+│
+├── manifest.json
+└── service-worker.js
