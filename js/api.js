@@ -328,3 +328,35 @@ function resetLocalDatabase() {
 
   initializeLocalDatabase();
 }
+
+
+/**
+ * Connexion agent temporaire par email.
+ */
+async function loginAgent(email) {
+  const agents = await getAgents();
+
+  const user = agents.find(agent => {
+    return (
+      agent.email.toLowerCase() === email.toLowerCase() &&
+      agent.role === "agent" &&
+      agent.active === true
+    );
+  });
+
+  if (!user) {
+    return {
+      success: false,
+      message: "Aucun agent actif trouvé avec cet email."
+    };
+  }
+
+  localStorage.setItem(STORAGE_KEYS.currentUser, JSON.stringify(user));
+
+  return {
+    success: true,
+    message: "Connexion réussie.",
+    user
+  };
+}
+
