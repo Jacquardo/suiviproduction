@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Administration - Suivi Production ARC+</title>
+
+  <link rel="stylesheet" href="./css/style.css" />
+  <link rel="stylesheet" href="./css/admin.css" />
+  <link rel="manifest" href="./manifest.json" />
+
+  <meta name="theme-color" content="#2563eb" />
+</head>
+<body>
+  <header class="admin-header">
+    <div>
+      <h1>Page administrateur</h1>
+      <p>Suivi global de la production ARC+</p>
+    </div>
+
+    <nav class="admin-nav">
+      <a href="./index.html">Accueil</a>
+      <button id="logoutBtn" type="button">Déconnexion</button>
+    </nav>
+  </header>
+
+  <main class="admin-container">
+
+    <!-- Connexion manager -->
+    <section class="admin-section" id="loginSection">
+      <div class="section-header">
+        <h2>Connexion manager</h2>
+        <p>Identifiez-vous pour accéder à l’espace administrateur.</p>
+      </div>
+
+      <div class="login-box">
+        <label for="managerEmail">Email manager</label>
+        <input
+          type="email"
+          id="managerEmail"
+          placeholder="exemple: manager@keobiz.fr"
+        />
+
+        <label for="managerCode">Code d’accès</label>
+        <input
+          type="password"
+          id="managerCode"
+          placeholder="Code administrateur"
+        />
+
+        <button id="loginBtn" type="button" class="primary-button">
+          Se connecter
+        </button>
+
+        <p id="loginMessage" class="message"></p>
+      </div>
+    </section>
+
+    <!-- Contenu administrateur -->
+    <section id="adminContent" class="hidden">
+
+      <!-- Indicateurs clés -->
+      <section class="admin-section">
+        <div class="section-header">
+          <h2>Indicateurs clés</h2>
+          <p>Vue rapide de la production globale.</p>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-label">Production totale</span>
+            <strong id="kpiTotalProduction">0</strong>
+          </div>
+
+          <div class="kpi-card">
+            <span class="kpi-label">Agents actifs</span>
+            <strong id="kpiActiveAgents">0</strong>
+          </div>
+
+          <div class="kpi-card">
+            <span class="kpi-label">Production moyenne</span>
+            <strong id="kpiAverageProduction">0</strong>
+          </div>
+
+          <div class="kpi-card">
+            <span class="kpi-label">Meilleur agent</span>
+            <strong id="kpiBestAgent">-</strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- Import Excel -->
+      <section class="admin-section">
+        <div class="section-header">
+          <h2>Import du fichier Excel</h2>
+          <p>Importer un fichier de production au format Excel.</p>
+        </div>
+
+        <div class="import-box">
+          <input
+            type="file"
+            id="excelFile"
+            accept=".xlsx,.xls"
+          />
+
+          <div class="button-row">
+            <button id="previewExcelBtn" type="button" class="secondary-button">
+              Prévisualiser
+            </button>
+
+            <button id="saveExcelBtn" type="button" class="primary-button">
+              Enregistrer
+            </button>
+          </div>
+
+          <p id="importStatus" class="message"></p>
+        </div>
+      </section>
+
+      <!-- Filtres -->
+      <section class="admin-section">
+        <div class="section-header">
+          <h2>Filtres</h2>
+          <p>Filtrer les données par date, agent ou équipe.</p>
+        </div>
+
+        <div class="filters-grid">
+          <div class="form-group">
+            <label for="filterDate">Date</label>
+            <input type="date" id="filterDate" />
+          </div>
+
+          <div class="form-group">
+            <label for="filterAgent">Agent</label>
+            <select id="filterAgent">
+              <option value="">Tous les agents</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="filterTeam">Équipe</label>
+            <select id="filterTeam">
+              <option value="">Toutes les équipes</option>
+            </select>
+          </div>
+
+          <div class="form-group filter-actions">
+            <button id="applyFiltersBtn" type="button" class="primary-button">
+              Appliquer
+            </button>
+
+            <button id="resetFiltersBtn" type="button" class="secondary-button">
+              Réinitialiser
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tableau global de production -->
+      <section class="admin-section">
+        <div class="section-header">
+          <h2>Tableau global de production</h2>
+          <p>Liste des productions importées ou enregistrées.</p>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Agent</th>
+                <th>Équipe</th>
+                <th>Activité</th>
+                <th>Quantité</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+
+            <tbody id="productionTableBody">
+              <tr>
+                <td colspan="6" class="empty-table">
+                  Aucune donnée disponible pour le moment.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Liste des agents -->
+      <section class="admin-section">
+        <div class="section-header">
+          <h2>Liste des agents</h2>
+          <p>Agents enregistrés dans l’application.</p>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nom</th>
+                <th>Email</th>
+                <th>Équipe</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+
+            <tbody id="agentsTableBody">
+              <tr>
+                <td colspan="5" class="empty-table">
+                  Aucun agent chargé.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Modification du programme agent -->
+      <section class="admin-section">
+        <div class="section-header">
+          <h2>Programme agent</h2>
+          <p>Modifier le programme ou le message visible par un agent.</p>
+        </div>
+
+        <form id="programForm" class="program-form">
+          <div class="form-group">
+            <label for="programAgent">Agent</label>
+            <select id="programAgent" required>
+              <option value="">Sélectionner un agent</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="programDate">Date</label>
+            <input type="date" id="programDate" required />
+          </div>
+
+          <div class="form-group">
+            <label for="programActivity">Activité</label>
+            <input
+              type="text"
+              id="programActivity"
+              placeholder="Exemple: Relance J+7"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="programTarget">Objectif</label>
+            <input
+              type="number"
+              id="programTarget"
+              placeholder="Exemple: 50"
+              min="0"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="programPriority">Priorité</label>
+            <select id="programPriority">
+              <option value="normale">Normale</option>
+              <option value="haute">Haute</option>
+              <option value="urgente">Urgente</option>
+            </select>
+          </div>
+
+          <div class="form-group full-width">
+            <label for="programMessage">Message visible par l’agent</label>
+            <textarea
+              id="programMessage"
+              rows="4"
+              placeholder="Écrire une information ou une consigne..."
+            ></textarea>
+          </div>
+
+          <div class="form-actions full-width">
+            <button type="submit" class="primary-button">
+              Enregistrer le programme
+            </button>
+          </div>
+
+          <p id="programMessageStatus" class="message full-width"></p>
+        </form>
+      </section>
+
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>Suivi Production ARC+ - Administration</p>
+  </footer>
+
+  <!-- Librairie pour lire les fichiers Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <!-- Scripts de l’application -->
+  <script src="./js/api.js"></script>
+  <script src="./js/excel-import.js"></script>
+  <script src="./js/admin.js"></script>
+</body>
+</html>
