@@ -1,0 +1,62 @@
+[
+  {
+    "id": "prod_001",
+    "date": "2026-06-22",
+    "agentId": "k1001",
+    "agentName": "Agent 1",
+    "team": "ARC+",
+    "activity": "Relance J+7",
+    "quantity": 35,
+    "source": "demo"
+  },
+  {
+    "id": "prod_002",
+    "date": "2026-06-22",
+    "agentId": "k1002",
+    "agentName": "Agent 2",
+    "team": "ARC+",
+    "activity": "Traitement dossier",
+    "quantity": 42,
+    "source": "demo"
+  },
+  {
+    "id": "prod_003",
+    "date": "2026-06-22",
+    "agentId": "k1004",
+    "agentName": "Agent 4",
+    "team": "ARC+",
+    "activity": "Appel sortant",
+    "quantity": 28,
+    "source": "demo"
+  },
+  {
+    "id": "prod_004",
+    "date": "2026-06-21",
+    "agentId": "k1001",
+    "agentName": "Agent 1",
+    "team": "ARC+",
+    "activity": "Traitement dossier",
+    "quantity": 31,
+    "source": "demo"
+  },
+  {
+    "id": "prod_005",
+    "date": "2026-06-21",
+    "agentId": "k1002",
+    "agentName": "Agent 2",
+    "team": "ARC+",
+    "activity": "Relance J+7",
+    "quantity": 39,
+    "source": "demo"
+  },
+  {
+    "id": "prod_006",
+    "date": "2026-06-20",
+    "agentId": "k1004",
+    "agentName": "Agent 4",
+    "team": "ARC+",
+    "activity": "Contrôle relance",
+    "quantity": 45,
+    "source": "demo"
+  }
+]
