@@ -13,18 +13,19 @@
   <meta name="theme-color" content="#2563eb" />
 </head>
 <body>
-  <header class="admin-header">
+<header class="admin-header">
+  <div class="admin-header-brand">
+    <div class="admin-header-icon">📊</div>
     <div>
-      <h1>Page administrateur</h1>
+      <h1>Administration</h1>
       <p>Suivi global de la production ARC+</p>
     </div>
-
-    <nav class="admin-nav">
-      <a href="./index.html">Accueil</a>
-      <button id="logoutBtn" type="button">Déconnexion</button>
-    </nav>
-  </header>
-
+  </div>
+  <nav class="admin-nav">
+    <a href="./index.html">🏠 Accueil</a>
+    <button id="logoutBtn" type="button">↩ Déconnexion</button>
+  </nav>
+</header>
   <main class="admin-container">
 
     <!-- Connexion manager -->
@@ -67,27 +68,28 @@
           <p>Vue rapide de la production globale.</p>
         </div>
 
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <span class="kpi-label">Production totale</span>
-            <strong id="kpiTotalProduction">0</strong>
-          </div>
-
-          <div class="kpi-card">
-            <span class="kpi-label">Agents actifs</span>
-            <strong id="kpiActiveAgents">0</strong>
-          </div>
-
-          <div class="kpi-card">
-            <span class="kpi-label">Production moyenne</span>
-            <strong id="kpiAverageProduction">0</strong>
-          </div>
-
-          <div class="kpi-card">
-            <span class="kpi-label">Meilleur agent</span>
-            <strong id="kpiBestAgent">-</strong>
-          </div>
-        </div>
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <span class="kpi-card-icon">📦</span>
+    <span class="kpi-label">Production totale</span>
+    <strong id="kpiTotalProduction">0</strong>
+  </div>
+  <div class="kpi-card">
+    <span class="kpi-card-icon">👥</span>
+    <span class="kpi-label">Agents actifs</span>
+    <strong id="kpiActiveAgents">0</strong>
+  </div>
+  <div class="kpi-card">
+    <span class="kpi-card-icon">📈</span>
+    <span class="kpi-label">Production moyenne</span>
+    <strong id="kpiAverageProduction">0</strong>
+  </div>
+  <div class="kpi-card">
+    <span class="kpi-card-icon">🏆</span>
+    <span class="kpi-label">Meilleur agent</span>
+    <strong id="kpiBestAgent">-</strong>
+  </div>
+</div>
       </section>
 
       <!-- Import Excel -->
