@@ -1,4 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administration — Suivi Production ARC+</title>
+  <link rel="stylesheet" href="./css/style.css" />
+  <link rel="stylesheet" href="./css/admin.css" />
+  <link rel="stylesheet" href="./css/additions.css" />
+</head>
+<body>
 
+<!-- HEADER -->
+<header class="admin-header">
+  <div class="admin-header-brand">
+    <div class="admin-header-icon">📊</div>
+    <div>
+      <h1>Administration</h1>
+      <p>Suivi global de la production ARC+</p>
+    </div>
+  </div>
+  <nav class="admin-nav">
+    <div id="adminUserBadge" class="user-badge hidden">
+      <img id="adminUserPhoto" src="" alt="" class="user-badge-photo hidden" />
+      <span id="adminUserName"></span>
+    </div>
+    <a href="./index.html">🏠 Accueil</a>
+    <button id="logoutBtn" type="button">↩ Déconnexion</button>
+  </nav>
+</header>
+
+<!-- ÉCRAN DE CONNEXION -->
+<section class="auth-page-section" id="loginSection">
+  <div class="auth-modal">
+    <div class="auth-modal-icon">🔐</div>
+    <h2>Connexion administrateur</h2>
+    <p>Connectez-vous avec votre compte Google Keobiz autorisé.</p>
+    <button id="adminGoogleSignInBtn" class="google-btn">
+      <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" width="20" />
+      Se connecter avec Google
+    </button>
+    <p id="adminLoginMessage" class="message"></p>
+  </div>
+</section>
+
+<!-- CONTENU ADMIN -->
+<div id="adminContent" class="hidden">
+  <div class="admin-container">
+
+    <!-- NAVIGATION PAR ONGLETS -->
+    <nav class="admin-tabs">
+      <button class="admin-tab-btn" data-target="tabDashboard">📊 Tableau de bord</button>
+      <button class="admin-tab-btn" data-target="tabProduction">📦 Production</button>
+      <button class="admin-tab-btn" data-target="tabAgents">👥 Agents</button>
+      <button class="admin-tab-btn" data-target="tabSections">📄 Sections</button>
+      <button class="admin-tab-btn" data-target="tabAnnouncements">📢 Annonces</button>
+      <button class="admin-tab-btn" data-target="tabMessages">✉️ Messages</button>
+      <button class="admin-tab-btn" data-target="tabProgramme">📅 Programme</button>
+    </nav>
+
+    <!-- =================== ONGLET TABLEAU DE BORD =================== -->
+    <div id="tabDashboard" class="admin-tab-panel hidden">
+
+      <section class="admin-section">
+        <div class="section-header">
+          <h2>Indicateurs clés</h2>
+          <p>Vue rapide sur la production globale.</p>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-card-icon">📦</span>
+            <span class="kpi-label">Production totale</span>
+            <strong id="kpiTotalProduction">0</strong>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-card-icon">👥</span>
+            <span class="kpi-label">Agents actifs</span>
+            <strong id="kpiActiveAgents">0</strong>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-card-icon">📈</span>
+            <span class="kpi-label">Moyenne / agent</span>
+            <strong id="kpiAverageProduction">0</strong>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-card-icon">🏆</span>
+            <span class="kpi-label">Meilleur agent</span>
+            <strong id="kpiBestAgent">-</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section">
+        <div class="section-header">
+          <h2>Production par période</h2>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-card-icon">☀️</span>
+            <span class="kpi-label">Aujourd'hui</span>
+            <strong id="dashTodayTotal">0</strong>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-card-icon">📅</span>
+            <span class="kpi-label">Cette semaine</span>
+            <strong id="dashWeekTotal">0</strong>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-card-icon">🗓️</span>
+            <span class="kpi-label">Ce mois</span>
+            <strong id="dashMonthTotal">0</strong>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-card-icon">👤</span>
+            <span class="kpi-label">Agents enregistrés</span>
+            <strong id="dashAgentCount">0</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section">
+        <div class="section-header">
+          <h2>Top agents du jour</h2>
+        </div>
+        <div id="dashTopAgents"></div>
+      </section>
+
+      <section class="admin-section">
+        <div class="section-header">
+          <h2>Production hebdomadaire par agent</h2>
+          <p>Lundi au vendredi de la semaine en cours.</p>
+        </div>
+        <div id="dashWeeklyTable"></div>
+      </section>
+
+      <section class="admin-section">
+        <div class="section-header">
+          <h2>Graphiques de production</h2>
+          <p>Mis à jour selon les filtres actifs.</p>
+        </div>
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-container"><canvas id="chartByAffectation"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-container"><canvas id="chartByAgent"></canvas></div>
+          </div>
+        </div>
+        <div style="margin-top:20px;">
+          <div class="chart-card">
+            <div class="chart-container-sm"><canvas id="chartByDesignation"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- =================== ONGLET PRODUCTION =================== -->
+    <div id="tabProduction" class="admin-tab-panel hidden">
+
+      <section class="admin-section">
+        <div class="section-header">
+          <h2>Import du fichier Excel</h2>
+          <p>Format accepté : .xlsx ou .xls</p>
+        </div>
+        <div class="import-box">
+          <input type="file" id="excelFile" accept=".xlsx,.xls" />
+          <div class="button-row">
+            <button id="previewExcelBtn" type="button" class="secondary-button">Prévisualiser</button>
+            <button id="saveExcelBtn"    type="button" class="primary-button">Enregistrer</button>
+          </div>
+          <p id="importStatus" class="message"></p>
+        </div>
+      </section>
+
+      <section class="admin-section">
+        <div class="section-header"><h2>Filtres</h2></div>
+        <div class="filters-grid">
+          <div class="form-group">
+            <label for="filterDate">Date</label>
+            <input type="date" id="filterDate" />
+          </div>
+          <div class="form-group">
+            <label for="filterAgent">Agent</label>
+            <select id="filterAgent"><option value="">Tous les agents</option></select>
+          </div>
+          <div class="form-group">
+            <label for="filterTeam">Équipe</label>
+            <select id="filterTeam"><option value="">Toutes les équipes</option></select>
+          </div>
+          <div class="form-group filter-actions">
+            <button id="applyFiltersBtn" type="button" class="primary-button">Appliquer</button>
+            <button id="resetFiltersBtn" type="button" class="secondary-button">Réinitialiser</button>
+          </div>
+        </div>
+      </section>
 
       <section class="admin-section">
         <div class="section-header">
