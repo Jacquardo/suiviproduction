@@ -3,15 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>Suivi Production ARC+</title>
-
   <link rel="stylesheet" href="./css/style.css" />
   <link rel="manifest" href="./manifest.json" />
-
   <meta name="theme-color" content="#2563eb" />
 </head>
 <body>
+
 <header class="app-header">
   <div class="header-content">
     <div class="header-badge">✦ ARC+ · Keobiz</div>
@@ -19,39 +17,125 @@
     <p>Tableau de bord centralisé pour managers et agents</p>
   </div>
 </header>
-  <main class="home-container">
-    <section class="welcome-card">
-      <h2>Bienvenue</h2>
-      <p>
-        Cette application permet de suivre la production, consulter les programmes,
-        visualiser les indicateurs et accéder aux espaces dédiés.
-      </p>
-    </section>
 
-    <section class="access-grid">
-      <a href="./admin.html" class="access-card admin-card">
-        <div class="card-icon">👨‍💼</div>
-        <h3>Espace administrateur</h3>
-        <p>
-          Import Excel, tableau global, indicateurs, filtres et gestion des programmes agents.
-        </p>
-        <span class="card-button">Accéder</span>
-      </a>
+<!-- ÉCRAN DE CONNEXION -->
+<div id="loginOverlay" class="auth-overlay">
+  <div class="auth-modal">
+    <div class="auth-modal-icon">🔐</div>
+    <h2>Connexion requise</h2>
+    <p>Connectez-vous avec votre compte Google Keobiz pour accéder à l'application.</p>
+    <button id="googleSignInBtn" class="google-btn">
+      <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" width="20" />
+      Se connecter avec Google
+    </button>
+    <p id="loginError" class="message error" style="display:none;"></p>
+  </div>
+</div>
 
-      <a href="./agent.html" class="access-card user-card">
-        <div class="card-icon">👤</div>
-        <h3>Espace utilisateur</h3>
-        <p>
-          Tableau personnel, programme du jour et indicurs simples.
-        </p>
-        <span class="card-button">Accéder</span>
-      </a>
-    </section>
-  </main>
+<!-- CONTENU PRINCIPAL -->
+<main id="mainContent" class="home-container hidden">
+
+  <section class="welcome-card user-greeting-card">
+    <div class="user-greeting-info">
+      <img id="userAvatar" src="" alt="" class="user-avatar hidden" />
+      <div>
+        <h2 id="userWelcomeName">Bienvenue</h2>
+        <p id="userWelcomeEmail" class="text-muted"></p>
+      </div>
+    </div>
+    <button id="headerLogoutBtn" class="secondary-button">↩ Déconnexion</button>
+  </section>
+
+  <section class="access-grid" id="accessGrid">
+    <!-- Cartes rendues dynamiquement selon le rôle -->
+  </section>
+
+</main>
 
 <footer class="app-footer">
-  <strong>Suivi Production ARC+</strong> &nbsp;·&nbsp; Keobiz &nbsp;·&nbsp; Espace utilisateur
+  <strong>Suivi Production ARC+</strong> &nbsp;·&nbsp; Keobiz
 </footer>
-  <script src="./js/app.js"></script>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script src="./js/firebase-config.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/app.js"></script>
+
+<script>
+  const loginOverlay   = document.getElementById("loginOverlay");
+  const mainContent    = document.getElementById("mainContent");
+  const googleSignInBtn= document.getElementById("googleSignInBtn");
+  const loginError     = document.getElementById("loginError");
+  const headerLogoutBtn= document.getElementById("headerLogoutBtn");
+
+  onAuthStateChanged((user, reason) => {
+    if (user) {
+      loginOverlay.classList.add("hidden");
+      mainContent.classList.remove("hidden");
+      renderGreeting(user);
+      renderCards(user);
+    } else {
+      loginOverlay.classList.remove("hidden");
+      mainContent.classList.add("hidden");
+      if (reason === "unauthorized") showError("Accès non autorisé pour ce compte Google.");
+    }
+  });
+
+  googleSignInBtn.addEventListener("click", async () => {
+    googleSignInBtn.disabled = true;
+    googleSignInBtn.innerHTML = `<span class="spinner"></span> Connexion…`;
+    const result = await signInWithGoogle();
+    if (!result.success) {
+      showError(result.message);
+      googleSignInBtn.disabled = false;
+      googleSignInBtn.innerHTML = `<img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" width="20" /> Se connecter avec Google`;
+    }
+  });
+
+  headerLogoutBtn.addEventListener("click", () => signOutUser());
+
+  function showError(msg) {
+    loginError.textContent    = msg;
+    loginError.style.display  = "block";
+  }
+
+  function renderGreeting(user) {
+    document.getElementById("userWelcomeName").textContent  = `Bonjour, ${user.name || user.email}`;
+    document.getElementById("userWelcomeEmail").textContent = user.email;
+    const avatar = document.getElementById("userAvatar");
+    if (user.photo) { avatar.src = user.photo; avatar.classList.remove("hidden"); }
+  }
+
+  function renderCards(user) {
+    const grid    = document.getElementById("accessGrid");
+    const isAdmin = ACCESS_CONTROL.isAdmin(user.email);
+    const isUser  = ACCESS_CONTROL.isUser(user.email);
+    let html      = "";
+    if (isAdmin) {
+      html += `
+        <a href="./admin.html" class="access-card admin-card">
+          <div class="card-icon">👨‍💼</div>
+          <h3>Espace administrateur</h3>
+          <p>Tableau de bord, production globale, annonces, messages, sections et gestion des agents.</p>
+          <span class="card-button">Accéder</span>
+        </a>`;
+    }
+    if (isUser) {
+      html += `
+        <a href="./agent.html" class="access-card user-card">
+          <div class="card-icon">👤</div>
+          <h3>Espace utilisateur</h3>
+          <p>Tableau personnel, programme du jour, annonces, messages et saisie de production.</p>
+          <span class="card-button">Accéder</span>
+        </a>`;
+    }
+    grid.innerHTML = html;
+  }
+</script>
+
 </body>
 </html>
