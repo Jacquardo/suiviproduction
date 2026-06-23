@@ -1,0 +1,31 @@
+{
+  "designations": [
+    "SF",
+    "MAIL",
+    "APPEL SORTANT",
+    "TRAITEMENT"
+  ],
+  "affectations": [
+    "CDM",
+    "GP",
+    "PROSPECT",
+    "PRECO",
+    "CREA",
+    "SUPPORT KEOBIZ",
+    "FACTURATION",
+    "QUALITE",
+    "BUSINESS PLAN",
+    "CSC",
+    "TRANSFERT",
+    "NON TRANSFERT",
+    "RELANCES",
+    "FAUX NUM",
+    "AUTRES",
+    "FISCALITE",
+    "ARC+",
+    "COURRIER MA",
+    "JURISTE",
+    "APPEL M+3",
+    "CHATBOT"
+  ]
+}
