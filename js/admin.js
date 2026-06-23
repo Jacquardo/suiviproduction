@@ -3,432 +3,619 @@
    Suivi Production ARC+
 ========================= */
 
-let allAgents = [];
+let allAgents     = [];
 let allProduction = [];
+let allSections   = [];
+let allMessages   = [];
+let currentAdminUser = null;
 
-/**
- * Démarrage de la page admin.
- */
-document.addEventListener("DOMContentLoaded", async () => {
-  initializeLocalDatabase();
-  bindAdminEvents();
+/* ================================================
+   INITIALISATION
+================================================ */
 
-  if (isManagerLoggedIn()) {
+document.addEventListener("DOMContentLoaded", () => {
+  onAuthStateChanged(async (user, reason) => {
+    if (!user) {
+      if (reason === "unauthorized") showAuthMsg("Ce compte Google n'est pas autorisé.", "error");
+      showAdminLoginScreen();
+      return;
+    }
+    if (!ACCESS_CONTROL.isAdmin(user.email)) {
+      showAuthMsg("Vous n'avez pas les droits administrateur pour ce compte.", "error");
+      showAdminLoginScreen();
+      return;
+    }
+    currentAdminUser = user;
+    renderAdminUserBadge(user);
     showAdminContent();
     await loadAdminData();
-  } else {
-    showLoginSection();
-  }
+    initAdminTabs();
+  });
+
+  document.getElementById("adminGoogleSignInBtn")?.addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> Connexion en cours…`;
+    const result = await signInWithGoogle();
+    if (!result.success) {
+      showAuthMsg(result.message, "error");
+      btn.disabled = false;
+      btn.innerHTML = `<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" width="18"/> Se connecter avec Google`;
+    }
+  });
+
+  document.getElementById("logoutBtn")?.addEventListener("click", () => signOutUser());
+  bindAdminEvents();
 });
 
-/**
- * Brancher les événements.
- */
-function bindAdminEvents() {
-  const loginBtn = document.getElementById("loginBtn");
-  const logoutBtn = document.getElementById("logoutBtn");
+/* ================================================
+   AUTH UI
+================================================ */
 
-  const previewExcelBtn = document.getElementById("previewExcelBtn");
-  const saveExcelBtn = document.getElementById("saveExcelBtn");
-
-  const applyFiltersBtn = document.getElementById("applyFiltersBtn");
-  const resetFiltersBtn = document.getElementById("resetFiltersBtn");
-
-  const programForm = document.getElementById("programForm");
-
-  if (loginBtn) {
-    loginBtn.addEventListener("click", handleManagerLogin);
-  }
-
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", handleLogout);
-  }
-
-  if (previewExcelBtn) {
-    previewExcelBtn.addEventListener("click", previewExcelImport);
-  }
-
-  if (saveExcelBtn) {
-    saveExcelBtn.addEventListener("click", savePreviewedExcelRows);
-  }
-
-  if (applyFiltersBtn) {
-    applyFiltersBtn.addEventListener("click", applyProductionFilters);
-  }
-
-  if (resetFiltersBtn) {
-    resetFiltersBtn.addEventListener("click", resetProductionFilters);
-  }
-
-  if (programForm) {
-    programForm.addEventListener("submit", handleSaveProgramme);
-  }
+function showAdminLoginScreen() {
+  document.getElementById("loginSection")?.classList.remove("hidden");
+  document.getElementById("adminContent")?.classList.add("hidden");
 }
 
-/**
- * Afficher la section connexion.
- */
-function showLoginSection() {
-  const loginSection = document.getElementById("loginSection");
-  const adminContent = document.getElementById("adminContent");
-
-  if (loginSection) {
-    loginSection.classList.remove("hidden");
-  }
-
-  if (adminContent) {
-    adminContent.classList.add("hidden");
-  }
-}
-
-/**
- * Afficher le contenu administrateur.
- */
 function showAdminContent() {
-  const loginSection = document.getElementById("loginSection");
-  const adminContent = document.getElementById("adminContent");
-
-  if (loginSection) {
-    loginSection.classList.add("hidden");
-  }
-
-  if (adminContent) {
-    adminContent.classList.remove("hidden");
-  }
+  document.getElementById("loginSection")?.classList.add("hidden");
+  document.getElementById("adminContent")?.classList.remove("hidden");
 }
 
-/**
- * Connexion manager.
- */
-async function handleManagerLogin() {
-  const emailInput = document.getElementById("managerEmail");
-  const codeInput = document.getElementById("managerCode");
-  const loginMessage = document.getElementById("loginMessage");
-
-  const email = emailInput.value.trim();
-  const code = codeInput.value.trim();
-
-  if (!email || !code) {
-    loginMessage.textContent = "Veuillez saisir l’email et le code d’accès.";
-    loginMessage.className = "message error";
-    return;
-  }
-
-  const result = await loginManager(email, code);
-
-  if (!result.success) {
-    loginMessage.textContent = result.message;
-    loginMessage.className = "message error";
-    return;
-  }
-
-  loginMessage.textContent = result.message;
-  loginMessage.className = "message success";
-
-  showAdminContent();
-  await loadAdminData();
+function showAuthMsg(msg, type = "error") {
+  const el = document.getElementById("adminLoginMessage");
+  if (el) { el.textContent = msg; el.className = `message ${type}`; }
 }
 
-/**
- * Déconnexion.
- */
-function handleLogout() {
-  logoutUser();
-  showLoginSection();
+function renderAdminUserBadge(user) {
+  const badge = document.getElementById("adminUserBadge");
+  if (badge) badge.classList.remove("hidden");
+  setEl("adminUserName", user.name || user.email);
+  const photo = document.getElementById("adminUserPhoto");
+  if (photo && user.photo) { photo.src = user.photo; photo.classList.remove("hidden"); }
 }
 
-/**
- * Charger toutes les données admin.
- */
-async function loadAdminData() {
-  allAgents     = await getAgents();
-  allProduction = await getProduction();
+/* ================================================
+   TABS
+================================================ */
 
-  renderAgentsTable(allAgents);
-  renderAgentSelects(allAgents);
-  renderProductionTable(allProduction);
-  renderFilters(allAgents, allProduction);
-  updateKpis(allProduction);
-  setDefaultProgramDate();
-
-  // NOUVEAU : rend les graphiques
-  if (typeof renderCharts === "function") {
-    renderCharts(allProduction);
-  }
-}
-
-/**
- * Remplir les filtres agent et équipe.
- */
-function renderFilters(agents, production) {
-  const filterAgent = document.getElementById("filterAgent");
-  const filterTeam = document.getElementById("filterTeam");
-
-  if (!filterAgent || !filterTeam) return;
-
-  filterAgent.innerHTML = `<option value="">Tous les agents</option>`;
-  filterTeam.innerHTML = `<option value="">Toutes les équipes</option>`;
-
-  agents
-    .filter(agent => agent.role === "agent")
-    .forEach(agent => {
-      const option = document.createElement("option");
-      option.value = agent.id;
-      option.textContent = agent.name;
-      filterAgent.appendChild(option);
+function initAdminTabs() {
+  const tabs = document.querySelectorAll(".admin-tab-btn");
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      tabs.forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".admin-tab-panel").forEach(p => p.classList.add("hidden"));
+      tab.classList.add("active");
+      document.getElementById(tab.dataset.target)?.classList.remove("hidden");
     });
-
-  const teams = [...new Set([
-    ...agents.map(agent => agent.team).filter(Boolean),
-    ...production.map(row => row.team).filter(Boolean)
-  ])];
-
-  teams.forEach(team => {
-    const option = document.createElement("option");
-    option.value = team;
-    option.textContent = team;
-    filterTeam.appendChild(option);
   });
+  if (tabs.length) tabs[0].click();
 }
 
-/**
- * Remplir les listes d’agents.
- */
-function renderAgentSelects(agents) {
-  const programAgent = document.getElementById("programAgent");
+/* ================================================
+   CHARGEMENT DES DONNÉES
+================================================ */
 
-  if (!programAgent) return;
-
-  programAgent.innerHTML = `<option value="">Sélectionner un agent</option>`;
-
-  agents
-    .filter(agent => agent.role === "agent")
-    .forEach(agent => {
-      const option = document.createElement("option");
-      option.value = agent.id;
-      option.textContent = `${agent.name} (${agent.team})`;
-      programAgent.appendChild(option);
-    });
+async function loadAdminData() {
+  try {
+    [allAgents, allProduction] = await Promise.all([getAgents(), getProduction()]);
+    renderAgentsTable(allAgents);
+    renderAgentSelects(allAgents);
+    renderProductionTable(allProduction);
+    renderFilters(allAgents, allProduction);
+    updateKpis(allProduction);
+    updateDashboard(allProduction);
+    setDefaultProgramDate();
+    await Promise.all([loadSections(), loadAnnouncements(), loadAdminMessages()]);
+    if (typeof renderCharts === "function") renderCharts(allProduction);
+  } catch (err) {
+    console.error("Erreur chargement données admin :", err);
+  }
 }
 
-/**
- * Afficher le tableau des agents.
- */
-function renderAgentsTable(agents) {
-  const tbody = document.getElementById("agentsTableBody");
+/* ================================================
+   TABLEAU DE BORD
+================================================ */
 
-  if (!tbody) return;
+function updateDashboard(rows) {
+  const today      = getTodayDate();
+  const weekStart  = getWeekStart();
+  const monthStart = getMonthStart();
 
-  const visibleAgents = agents.filter(agent => agent.role === "agent");
+  const todayRows  = rows.filter(r => r.date === today);
+  const weekRows   = rows.filter(r => r.date >= weekStart);
+  const monthRows  = rows.filter(r => r.date >= monthStart);
 
-  if (!visibleAgents.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="5" class="empty-table">Aucun agent disponible.</td>
-      </tr>
-    `;
+  setEl("dashTodayTotal",  todayRows.reduce((s, r)  => s + Number(r.quantity || 0), 0));
+  setEl("dashWeekTotal",   weekRows.reduce((s, r)   => s + Number(r.quantity || 0), 0));
+  setEl("dashMonthTotal",  monthRows.reduce((s, r)  => s + Number(r.quantity || 0), 0));
+  setEl("dashAgentCount",  allAgents.filter(a => a.role !== "admin" && a.active).length);
+
+  renderTopAgents("dashTopAgents", todayRows);
+  renderWeeklyAgentTable("dashWeeklyTable", weekRows);
+}
+
+function renderTopAgents(containerId, rows) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const grouped = {};
+  rows.forEach(r => {
+    const k = r.agentName || r.agentEmail || "Inconnu";
+    grouped[k] = (grouped[k] || 0) + Number(r.quantity || 0);
+  });
+  const sorted = Object.entries(grouped).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  if (!sorted.length) {
+    container.innerHTML = `<p class="empty-message">Aucune production enregistrée aujourd'hui.</p>`;
     return;
   }
-
-  tbody.innerHTML = visibleAgents
-    .map(agent => {
-      const statusClass = agent.active ? "status-active" : "status-inactive";
-      const statusText = agent.active ? "Actif" : "Inactif";
-
-      return `
-        <tr>
-          <td>${agent.id}</td>
-          <td>${agent.name}</td>
-          <td>${agent.email}</td>
-          <td>${agent.team}</td>
-          <td><span class="${statusClass}">${statusText}</span></td>
-        </tr>
-      `;
-    })
-    .join("");
+  container.innerHTML = sorted.map(([name, qty], i) => `
+    <div class="top-agent-row">
+      <span class="rank-badge rank-${i + 1}">${i + 1}</span>
+      <span class="agent-name-label">${name}</span>
+      <strong class="agent-qty-label">${qty} unités</strong>
+    </div>
+  `).join("");
 }
 
-/**
- * Afficher le tableau de production.
- */
+function renderWeeklyAgentTable(containerId, rows) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const agents = {};
+  rows.forEach(r => {
+    const k = r.agentName || r.agentEmail || "Inconnu";
+    if (!agents[k]) agents[k] = { name: k, total: 0, days: {} };
+    agents[k].total += Number(r.quantity || 0);
+    agents[k].days[r.date] = (agents[k].days[r.date] || 0) + Number(r.quantity || 0);
+  });
+  const sorted   = Object.values(agents).sort((a, b) => b.total - a.total);
+  const weekDays = getWeekDays();
+  if (!sorted.length) {
+    container.innerHTML = `<p class="empty-message">Aucune production cette semaine.</p>`;
+    return;
+  }
+  container.innerHTML = `
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Agent</th>
+            ${weekDays.map(d => `<th>${formatDateFrShort(d)}</th>`).join("")}
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sorted.map(a => `
+            <tr>
+              <td><strong>${a.name}</strong></td>
+              ${weekDays.map(d => `<td>${a.days[d] || 0}</td>`).join("")}
+              <td><strong>${a.total}</strong></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ================================================
+   SECTIONS
+================================================ */
+
+async function loadSections() {
+  allSections = await getAllSections();
+  renderSectionsAdmin(allSections);
+}
+
+function renderSectionsAdmin(sections) {
+  const container = document.getElementById("sectionsListAdmin");
+  if (!container) return;
+  if (!sections.length) {
+    container.innerHTML = `<p class="empty-message">Aucune section créée.</p>`;
+    return;
+  }
+  container.innerHTML = sections.map(s => `
+    <div class="section-item ${s.active ? "" : "section-item-inactive"}">
+      <div class="section-item-header">
+        <span class="section-item-icon">${s.icon || "📄"}</span>
+        <div class="section-item-info">
+          <strong>${s.title}</strong>
+          <span class="section-item-category">${s.category || "général"}</span>
+        </div>
+        <div class="section-item-actions">
+          <button class="secondary-button btn-sm" onclick="editSection('${s.id}')">✏️</button>
+          <button class="secondary-button btn-sm" onclick="toggleSectionActive('${s.id}', ${!s.active})">
+            ${s.active ? "🚫 Masquer" : "✅ Afficher"}
+          </button>
+          <button class="danger-button btn-sm" onclick="confirmDeleteSection('${s.id}')">🗑️</button>
+        </div>
+      </div>
+      <p class="section-item-preview">${(s.content || "").replace(/<[^>]*>/g, "").substring(0, 100)}…</p>
+    </div>
+  `).join("");
+}
+
+async function handleSaveSection(event) {
+  event.preventDefault();
+  const status = document.getElementById("sectionStatus");
+  const editId = document.getElementById("sectionEditId")?.value || "";
+  const section = {
+    id:        editId || null,
+    title:     document.getElementById("sectionTitle")?.value.trim()   || "",
+    content:   document.getElementById("sectionContent")?.value.trim() || "",
+    icon:      document.getElementById("sectionIcon")?.value.trim()    || "📄",
+    category:  document.getElementById("sectionCategory")?.value       || "general",
+    order:     Number(document.getElementById("sectionOrder")?.value   || 0),
+    createdBy: currentAdminUser?.email || ""
+  };
+  if (!section.title || !section.content) {
+    status.textContent = "Titre et contenu sont obligatoires.";
+    status.className   = "message error";
+    return;
+  }
+  const result = await saveSection(section);
+  if (result.success) {
+    status.textContent = "Section enregistrée.";
+    status.className   = "message success";
+    resetSectionForm();
+    await loadSections();
+  } else {
+    status.textContent = "Erreur lors de l'enregistrement.";
+    status.className   = "message error";
+  }
+}
+
+function resetSectionForm() {
+  document.getElementById("sectionForm")?.reset();
+  const editId = document.getElementById("sectionEditId");
+  if (editId) editId.value = "";
+  setEl("sectionFormTitle", "Nouvelle section");
+}
+
+function editSection(id) {
+  const s = allSections.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById("sectionEditId").value   = s.id;
+  document.getElementById("sectionTitle").value    = s.title;
+  document.getElementById("sectionContent").value  = s.content;
+  document.getElementById("sectionIcon").value     = s.icon || "📄";
+  document.getElementById("sectionCategory").value = s.category || "general";
+  document.getElementById("sectionOrder").value    = s.order || 0;
+  setEl("sectionFormTitle", "Modifier la section");
+  document.getElementById("sectionForm")?.scrollIntoView({ behavior: "smooth" });
+}
+
+async function confirmDeleteSection(id) {
+  if (!confirm("Supprimer cette section ?")) return;
+  await deleteSection(id);
+  await loadSections();
+}
+
+async function toggleSectionActive(id, active) {
+  await getDb().collection("sections").doc(id).update({ active });
+  await loadSections();
+}
+
+/* ================================================
+   ANNONCES
+================================================ */
+
+async function loadAnnouncements() {
+  const list = await getAnnouncements();
+  renderAnnouncementsAdmin(list);
+}
+
+function renderAnnouncementsAdmin(list) {
+  const container = document.getElementById("announcementsListAdmin");
+  if (!container) return;
+  if (!list.length) {
+    container.innerHTML = `<p class="empty-message">Aucune annonce publiée.</p>`;
+    return;
+  }
+  container.innerHTML = list.map(a => `
+    <div class="announcement-card priority-${a.priority || "normale"}">
+      <div class="announcement-header">
+        <div>
+          <span class="ann-category">${getCategoryLabel(a.category)}</span>
+          <strong class="ann-title">${a.title}</strong>
+        </div>
+        <div class="ann-meta">
+          <span>${formatDateFrFromTimestamp(a.createdAt)}</span>
+          <span class="badge-target">${getTargetLabel(a.targetRole)}</span>
+          <button class="danger-button btn-sm" onclick="confirmDeleteAnn('${a.id}')">🗑️</button>
+        </div>
+      </div>
+      <p class="ann-content">${a.content}</p>
+      <span class="ann-author">Par ${a.author || "Admin"}</span>
+    </div>
+  `).join("");
+}
+
+async function handleSaveAnnouncement(event) {
+  event.preventDefault();
+  const status = document.getElementById("announcementStatus");
+  const ann = {
+    title:      document.getElementById("announcementTitle")?.value.trim()   || "",
+    content:    document.getElementById("announcementContent")?.value.trim() || "",
+    category:   document.getElementById("announcementCategory")?.value       || "info",
+    priority:   document.getElementById("announcementPriority")?.value       || "normale",
+    targetRole: document.getElementById("announcementTarget")?.value         || "all",
+    author:     currentAdminUser?.name || currentAdminUser?.email             || ""
+  };
+  if (!ann.title || !ann.content) {
+    status.textContent = "Titre et contenu obligatoires.";
+    status.className   = "message error";
+    return;
+  }
+  const result = await saveAnnouncement(ann);
+  if (result.success) {
+    status.textContent = "Annonce publiée.";
+    status.className   = "message success";
+    document.getElementById("announcementForm")?.reset();
+    await loadAnnouncements();
+  } else {
+    status.textContent = "Erreur lors de la publication.";
+    status.className   = "message error";
+  }
+}
+
+async function confirmDeleteAnn(id) {
+  if (!confirm("Supprimer cette annonce ?")) return;
+  await deleteAnnouncement(id);
+  await loadAnnouncements();
+}
+
+/* ================================================
+   MESSAGES
+================================================ */
+
+async function loadAdminMessages() {
+  if (!currentAdminUser) return;
+  allMessages = await getMessages(currentAdminUser.email);
+  renderAdminMessages(allMessages);
+  renderMessageTargets();
+}
+
+function renderAdminMessages(messages) {
+  const container = document.getElementById("messagesListAdmin");
+  if (!container) return;
+  if (!messages.length) {
+    container.innerHTML = `<p class="empty-message">Aucun message.</p>`;
+    return;
+  }
+  container.innerHTML = messages.map(m => {
+    const isSent = m.fromEmail === currentAdminUser?.email;
+    return `
+      <div class="message-card ${isSent ? "" : "message-received"}">
+        <div class="message-header">
+          <div>
+            <strong>${m.subject || "Sans objet"}</strong>
+            <span class="message-target-label">
+              ${isSent
+                ? `→ ${m.targetName || m.targetEmail}`
+                : `← ${m.fromName  || m.fromEmail}`}
+            </span>
+          </div>
+          <div class="message-meta">
+            <span>${formatDateFrFromTimestamp(m.createdAt)}</span>
+            <button class="danger-button btn-sm" onclick="confirmDeleteMsg('${m.id}')">🗑️</button>
+          </div>
+        </div>
+        <p class="message-body">${m.content}</p>
+      </div>`;
+  }).join("");
+}
+
+function renderMessageTargets() {
+  const select = document.getElementById("messageTarget");
+  if (!select) return;
+  select.innerHTML = `<option value="all">📢 Tous les utilisateurs</option>
+    ${ACCESS_CONTROL.users.map(email => `<option value="${email}">${email}</option>`).join("")}`;
+}
+
+async function handleSendMessage(event) {
+  event.preventDefault();
+  const status = document.getElementById("messageStatus");
+  const sel    = document.getElementById("messageTarget");
+  const message = {
+    subject:     document.getElementById("messageSubject")?.value.trim()  || "",
+    content:     document.getElementById("messageContent")?.value.trim()  || "",
+    fromEmail:   currentAdminUser?.email || "",
+    fromName:    currentAdminUser?.name  || "",
+    targetEmail: sel?.value || "all",
+    targetName:  sel?.options[sel.selectedIndex]?.text || "Tous"
+  };
+  if (!message.content) {
+    status.textContent = "Le contenu est obligatoire.";
+    status.className   = "message error";
+    return;
+  }
+  const result = await sendMessage(message);
+  if (result.success) {
+    status.textContent = "Message envoyé.";
+    status.className   = "message success";
+    document.getElementById("messageForm")?.reset();
+    await loadAdminMessages();
+  } else {
+    status.textContent = "Erreur lors de l'envoi.";
+    status.className   = "message error";
+  }
+}
+
+async function confirmDeleteMsg(id) {
+  if (!confirm("Supprimer ce message ?")) return;
+  await deleteMessage(id);
+  await loadAdminMessages();
+}
+
+/* ================================================
+   PRODUCTION & FILTRES
+================================================ */
+
 function renderProductionTable(rows) {
   const tbody = document.getElementById("productionTableBody");
-
   if (!tbody) return;
-
   if (!rows.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="6" class="empty-table">
-          Aucune donnée disponible pour le moment.
-        </td>
-      </tr>
-    `;
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-table">Aucune donnée disponible.</td></tr>`;
     return;
   }
-
-  tbody.innerHTML = rows
-    .map(row => {
-      return `
-        <tr>
-          <td>${formatDateFr(row.date)}</td>
-          <td>${row.agentName || row.agentId || "-"}</td>
-          <td>${row.team || "-"}</td>
-          <td>${row.activity || "-"}</td>
-          <td>${Number(row.quantity || 0)}</td>
-          <td>${row.source || "-"}</td>
-        </tr>
-      `;
-    })
-    .join("");
+  tbody.innerHTML = rows.slice(0, 300).map(r => `
+    <tr>
+      <td>${formatDateFr(r.date)}</td>
+      <td>${r.agentName || r.agentEmail || "-"}</td>
+      <td>${r.team || "-"}</td>
+      <td>${r.activity || "-"}</td>
+      <td><strong>${Number(r.quantity || 0)}</strong></td>
+      <td>${r.source || "-"}</td>
+    </tr>
+  `).join("");
 }
 
-/**
- * Mettre à jour les indicateurs clés.
- */
 function updateKpis(rows) {
-  const totalProductionEl = document.getElementById("kpiTotalProduction");
-  const activeAgentsEl = document.getElementById("kpiActiveAgents");
-  const averageProductionEl = document.getElementById("kpiAverageProduction");
-  const bestAgentEl = document.getElementById("kpiBestAgent");
-
-  const totalProduction = rows.reduce((sum, row) => {
-    return sum + Number(row.quantity || 0);
-  }, 0);
-
-  const activeAgents = allAgents.filter(agent => {
-    return agent.role === "agent" && agent.active === true;
+  const total      = rows.reduce((s, r) => s + Number(r.quantity || 0), 0);
+  const active     = allAgents.filter(a => a.role !== "admin" && a.active);
+  const avg        = active.length ? Math.round(total / active.length) : 0;
+  const byAgent    = {};
+  rows.forEach(r => {
+    const k = r.agentName || r.agentEmail || "Inconnu";
+    byAgent[k] = (byAgent[k] || 0) + Number(r.quantity || 0);
   });
-
-  const averageProduction = activeAgents.length
-    ? Math.round(totalProduction / activeAgents.length)
-    : 0;
-
-  const productionByAgent = {};
-
-  rows.forEach(row => {
-    const key = row.agentName || row.agentId || "Inconnu";
-
-    if (!productionByAgent[key]) {
-      productionByAgent[key] = 0;
-    }
-
-    productionByAgent[key] += Number(row.quantity || 0);
-  });
-
-  let bestAgent = "-";
-  let bestScore = 0;
-
-  Object.entries(productionByAgent).forEach(([agentName, score]) => {
-    if (score > bestScore) {
-      bestScore = score;
-      bestAgent = agentName;
-    }
-  });
-
-  if (totalProductionEl) totalProductionEl.textContent = totalProduction;
-  if (activeAgentsEl) activeAgentsEl.textContent = activeAgents.length;
-  if (averageProductionEl) averageProductionEl.textContent = averageProduction;
-  if (bestAgentEl) bestAgentEl.textContent = bestAgent;
+  const best = Object.entries(byAgent).sort((a, b) => b[1] - a[1])[0]?.[0] || "-";
+  setEl("kpiTotalProduction",   total);
+  setEl("kpiActiveAgents",      active.length);
+  setEl("kpiAverageProduction", avg);
+  setEl("kpiBestAgent",         best);
 }
 
-/**
- * Appliquer les filtres.
- */
+function renderFilters(agents, production) {
+  const fa = document.getElementById("filterAgent");
+  const ft = document.getElementById("filterTeam");
+  if (!fa || !ft) return;
+  fa.innerHTML = `<option value="">Tous les agents</option>`;
+  ft.innerHTML = `<option value="">Toutes les équipes</option>`;
+  agents.filter(a => a.role !== "admin").forEach(a => {
+    const opt = document.createElement("option");
+    opt.value = a.email; opt.textContent = a.name;
+    fa.appendChild(opt);
+  });
+  const teams = [...new Set([...agents, ...production].map(x => x.team).filter(Boolean))];
+  teams.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t; opt.textContent = t;
+    ft.appendChild(opt);
+  });
+}
+
+function renderAgentSelects(agents) {
+  const sel = document.getElementById("programAgent");
+  if (!sel) return;
+  sel.innerHTML = `<option value="">Sélectionner un agent</option>`;
+  agents.filter(a => a.role !== "admin").forEach(a => {
+    const opt = document.createElement("option");
+    opt.value = a.email;
+    opt.textContent = `${a.name} (${a.team || "ARC+"})`;
+    sel.appendChild(opt);
+  });
+}
+
+function renderAgentsTable(agents) {
+  const tbody = document.getElementById("agentsTableBody");
+  if (!tbody) return;
+  const visible = agents.filter(a => a.role !== "admin");
+  if (!visible.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-table">Aucun agent enregistré.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = visible.map(a => `
+    <tr>
+      <td>${a.id || "-"}</td>
+      <td>${a.name || "-"}</td>
+      <td>${a.email || "-"}</td>
+      <td>${a.team || "-"}</td>
+      <td><span class="${a.active ? "status-active" : "status-inactive"}">${a.active ? "Actif" : "Inactif"}</span></td>
+    </tr>
+  `).join("");
+}
+
 function applyProductionFilters() {
-  const filterDate = document.getElementById("filterDate").value;
-  const filterAgent = document.getElementById("filterAgent").value;
-  const filterTeam = document.getElementById("filterTeam").value;
-
-  let filteredRows = [...allProduction];
-
-  if (filterDate) {
-    filteredRows = filteredRows.filter(row => row.date === filterDate);
-  }
-
-  if (filterAgent) {
-    filteredRows = filteredRows.filter(row => row.agentId === filterAgent);
-  }
-
-  if (filterTeam) {
-    filteredRows = filteredRows.filter(row => row.team === filterTeam);
-  }
-
-  if (typeof renderCharts === "function") {
-    renderCharts(filteredRows);
-  }
+  const date  = document.getElementById("filterDate")?.value  || "";
+  const email = document.getElementById("filterAgent")?.value || "";
+  const team  = document.getElementById("filterTeam")?.value  || "";
+  let filtered = [...allProduction];
+  if (date)  filtered = filtered.filter(r => r.date === date);
+  if (email) filtered = filtered.filter(r => r.agentEmail === email);
+  if (team)  filtered = filtered.filter(r => r.team === team);
+  renderProductionTable(filtered);
+  updateKpis(filtered);
+  if (typeof renderCharts === "function") renderCharts(filtered);
 }
-/**
- * Réinitialiser les filtres.
- */
+
 function resetProductionFilters() {
-  const filterDate = document.getElementById("filterDate");
-  const filterAgent = document.getElementById("filterAgent");
-  const filterTeam = document.getElementById("filterTeam");
-
-  if (filterDate) filterDate.value = "";
-  if (filterAgent) filterAgent.value = "";
-  if (filterTeam) filterTeam.value = "";
-
+  ["filterDate", "filterAgent", "filterTeam"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
   renderProductionTable(allProduction);
   updateKpis(allProduction);
+  if (typeof renderCharts === "function") renderCharts(allProduction);
 }
 
-/**
- * Date par défaut du programme.
- */
+/* ================================================
+   PROGRAMME
+================================================ */
+
 function setDefaultProgramDate() {
-  const programDate = document.getElementById("programDate");
-
-  if (programDate && !programDate.value) {
-    programDate.value = getTodayDate();
-  }
+  const el = document.getElementById("programDate");
+  if (el && !el.value) el.value = getTodayDate();
 }
 
-/**
- * Enregistrer le programme agent.
- */
 async function handleSaveProgramme(event) {
   event.preventDefault();
+  const status     = document.getElementById("programMessageStatus");
+  const agentEmail = document.getElementById("programAgent")?.value || "";
+  const agent      = allAgents.find(a => a.email === agentEmail);
 
-  const programAgent = document.getElementById("programAgent");
-  const programDate = document.getElementById("programDate");
-  const programActivity = document.getElementById("programActivity");
-  const programTarget = document.getElementById("programTarget");
-  const programPriority = document.getElementById("programPriority");
-  const programMessage = document.getElementById("programMessage");
-  const status = document.getElementById("programMessageStatus");
-
-  const currentUser = getCurrentUser();
-
-  if (!programAgent.value || !programDate.value || !programActivity.value || !programTarget.value) {
-    status.textContent = "Veuillez remplir les champs obligatoires.";
-    status.className = "message error full-width";
-    return;
-  }
-
-  const programme = {
-    date: programDate.value,
-    agentId: programAgent.value,
-    activity: programActivity.value.trim(),
-    target: Number(programTarget.value),
-    priority: programPriority.value,
-    message: programMessage.value.trim(),
-    updatedBy: currentUser ? currentUser.email : ""
+  const prog = {
+    date:       document.getElementById("programDate")?.value          || "",
+    agentEmail,
+    agentId:    agent?.id    || "",
+    agentName:  agent?.name  || agentEmail,
+    activity:   document.getElementById("programActivity")?.value.trim() || "",
+    target:     document.getElementById("programTarget")?.value        || 0,
+    priority:   document.getElementById("programPriority")?.value      || "normale",
+    message:    document.getElementById("programMessage")?.value.trim() || "",
+    updatedBy:  currentAdminUser?.email || ""
   };
 
-  const result = await saveProgramme(programme);
-
-  if (result.success) {
-    status.textContent = "Programme enregistré avec succès.";
-    status.className = "message success full-width";
-
-    programActivity.value = "";
-    programTarget.value = "";
-    programPriority.value = "normale";
-    programMessage.value = "";
-  } else {
-    status.textContent = "Erreur pendant l’enregistrement du programme.";
-    status.className = "message error full-width";
+  if (!prog.agentEmail || !prog.date || !prog.activity || !prog.target) {
+    status.textContent = "Veuillez remplir tous les champs obligatoires.";
+    status.className   = "message error full-width";
+    return;
   }
+  const result = await saveProgramme(prog);
+  if (result.success) {
+    status.textContent = "Programme enregistré.";
+    status.className   = "message success full-width";
+    ["programActivity","programTarget","programMessage"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+    document.getElementById("programPriority").value = "normale";
+  } else {
+    status.textContent = "Erreur lors de l'enregistrement.";
+    status.className   = "message error full-width";
+  }
+}
+
+/* ================================================
+   BIND EVENTS
+================================================ */
+
+function bindAdminEvents() {
+  document.getElementById("previewExcelBtn")?.addEventListener("click",  previewExcelImport);
+  document.getElementById("saveExcelBtn")?.addEventListener("click",     savePreviewedExcelRows);
+  document.getElementById("applyFiltersBtn")?.addEventListener("click",  applyProductionFilters);
+  document.getElementById("resetFiltersBtn")?.addEventListener("click",  resetProductionFilters);
+  document.getElementById("programForm")?.addEventListener("submit",     handleSaveProgramme);
+  document.getElementById("announcementForm")?.addEventListener("submit",handleSaveAnnouncement);
+  document.getElementById("messageForm")?.addEventListener("submit",     handleSendMessage);
+  document.getElementById("sectionForm")?.addEventListener("submit",     handleSaveSection);
 }
