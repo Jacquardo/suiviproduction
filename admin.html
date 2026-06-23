@@ -9,6 +9,9 @@
   <link rel="stylesheet" href="./css/style.css" />
   <link rel="stylesheet" href="./css/admin.css" />
   <link rel="manifest" href="./manifest.json" />
+  <link rel="stylesheet" href="./css/additions.css" />
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <meta name="theme-color" content="#2563eb" />
 </head>
@@ -91,6 +94,37 @@
   </div>
 </div>
       </section>
+
+      <!-- Graphiques de production -->
+<section class="admin-section" id="chartsSection">
+  <div class="section-header">
+    <h2>📊 Graphiques de production</h2>
+    <p>Visualisation en temps réel — mis à jour selon les filtres actifs.</p>
+  </div>
+
+  <!-- Ligne 1 : Affectation + Agent -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-container">
+        <canvas id="chartByAffectation"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-container">
+        <canvas id="chartByAgent"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ligne 2 : Désignation (horizontal) -->
+  <div style="margin-top:16px;">
+    <div class="chart-card">
+      <div class="chart-container-sm">
+        <canvas id="chartByDesignation"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
 
       <!-- Import Excel -->
       <section class="admin-section">
@@ -299,9 +333,11 @@
   <!-- Librairie pour lire les fichiers Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
-  <!-- Scripts de l’application -->
-  <script src="./js/api.js"></script>
-  <script src="./js/excel-import.js"></script>
-  <script src="./js/admin.js"></script>
+<script src="./js/app.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/excel-import.js"></script>
+<script src="./js/charts.js"></script>
+<script src="./js/admin.js"></script>
+  
 </body>
 </html>
