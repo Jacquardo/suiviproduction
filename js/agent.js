@@ -61,13 +61,11 @@ function showAgentContent() {
   const loginSection = document.getElementById("agentLoginSection");
   const agentContent = document.getElementById("agentContent");
 
-  if (loginSection) {
-    loginSection.classList.add("hidden");
-  }
+  if (loginSection) loginSection.classList.add("hidden");
+  if (agentContent) agentContent.classList.remove("hidden");
 
-  if (agentContent) {
-    agentContent.classList.remove("hidden");
-  }
+  // Initialise le formulaire de saisie
+  initProductionEntry();
 }
 
 /**
