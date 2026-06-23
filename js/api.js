@@ -1,369 +1,287 @@
 /* =========================
-   API LOCALE TEMPORAIRE
+   API FIRESTORE
    Suivi Production ARC+
 ========================= */
 
-/**
- * Clés utilisées dans localStorage.
- */
-const STORAGE_KEYS = {
-  agents: "suivi_prod_agents",
-  production: "suivi_prod_production",
-  programmes: "suivi_prod_programmes",
-  currentUser: "suivi_prod_current_user"
-};
+/* ================================================
+   AGENTS
+================================================ */
 
-/**
- * Données de démonstration.
- * Elles servent uniquement au démarrage du prototype.
- */
-const DEFAULT_AGENTS = [
-  {
-    id: "k1736",
-    name: "Jacquardo",
-    email: "sedra.k1736@keobiz.fr",
-    team: "ARC+",
-    role: "admin",
-    active: true
-  },
-  {
-    id: "k1001",
-    name: "Agent 1",
-    email: "agent1@keobiz.fr",
-    team: "ARC+",
-    role: "agent",
-    active: true
-  },
-  {
-    id: "k1002",
-    name: "Agent 2",
-    email: "agent2@keobiz.fr",
-    team: "ARC+",
-    role: "agent",
-    active: true
-  },
-  {
-    id: "k1003",
-    name: "Agent 3",
-    email: "agent3@keobiz.fr",
-    team: "ARC+",
-    role: "agent",
-    active: false
-  },
-  {
-    id: "k1004",
-    name: "Agent 4",
-    email: "agent4@keobiz.fr",
-    team: "ARC+",
-    role: "agent",
-    active: true
-  }
-];
-
-const DEFAULT_PRODUCTION = [
-  {
-    id: "prod_001",
-    date: "2026-06-22",
-    agentId: "k1001",
-    agentName: "Agent 1",
-    team: "ARC+",
-    activity: "Relance J+7",
-    quantity: 35,
-    source: "demo"
-  },
-  {
-    id: "prod_002",
-    date: "2026-06-22",
-    agentId: "k1002",
-    agentName: "Agent 2",
-    team: "ARC+",
-    activity: "Traitement dossier",
-    quantity: 42,
-    source: "demo"
-  },
-  {
-    id: "prod_003",
-    date: "2026-06-21",
-    agentId: "k1001",
-    agentName: "Agent 1",
-    team: "ARC+",
-    activity: "Appel sortant",
-    quantity: 28,
-    source: "demo"
-  }
-];
-
-const DEFAULT_PROGRAMMES = [
-  {
-    id: "prog_001",
-    date: "2026-06-22",
-    agentId: "k1001",
-    activity: "Relance J+7",
-    target: 40,
-    priority: "haute",
-    message: "Priorité sur les relances J+7.",
-    updatedBy: "sedra.k1736@keobiz.fr"
-  }
-];
-
-/**
- * Initialise les données locales si elles n’existent pas encore.
- */
-function initializeLocalDatabase() {
-  if (!localStorage.getItem(STORAGE_KEYS.agents)) {
-    localStorage.setItem(STORAGE_KEYS.agents, JSON.stringify(DEFAULT_AGENTS));
-  }
-
-  if (!localStorage.getItem(STORAGE_KEYS.production)) {
-    localStorage.setItem(STORAGE_KEYS.production, JSON.stringify(DEFAULT_PRODUCTION));
-  }
-
-  if (!localStorage.getItem(STORAGE_KEYS.programmes)) {
-    localStorage.setItem(STORAGE_KEYS.programmes, JSON.stringify(DEFAULT_PROGRAMMES));
-  }
-}
-
-/**
- * Lecture générique dans localStorage.
- */
-function readStorage(key) {
-  const rawData = localStorage.getItem(key);
-
-  if (!rawData) {
-    return [];
-  }
-
-  try {
-    return JSON.parse(rawData);
-  } catch (error) {
-    console.error("Erreur de lecture localStorage :", error);
-    return [];
-  }
-}
-
-/**
- * Écriture générique dans localStorage.
- */
-function writeStorage(key, data) {
-  localStorage.setItem(key, JSON.stringify(data));
-}
-
-/**
- * Connexion manager temporaire.
- * Pour le prototype :
- * email : sedra.k1736@keobiz.fr
- * code : admin123
- */
-async function loginManager(email, code) {
-  const agents = await getAgents();
-
-  const user = agents.find(agent => {
-    return (
-      agent.email.toLowerCase() === email.toLowerCase() &&
-      agent.role === "admin" &&
-      agent.active === true
-    );
-  });
-
-  if (!user) {
-    return {
-      success: false,
-      message: "Aucun manager actif trouvé avec cet email."
-    };
-  }
-
-  if (code !== "admin123") {
-    return {
-      success: false,
-      message: "Code d’accès incorrect."
-    };
-  }
-
-  localStorage.setItem(STORAGE_KEYS.currentUser, JSON.stringify(user));
-
-  return {
-    success: true,
-    message: "Connexion réussie.",
-    user
-  };
-}
-
-/**
- * Déconnexion.
- */
-function logoutUser() {
-  localStorage.removeItem(STORAGE_KEYS.currentUser);
-}
-
-/**
- * Utilisateur connecté.
- */
-function getCurrentUser() {
-  const rawData = localStorage.getItem(STORAGE_KEYS.currentUser);
-
-  if (!rawData) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(rawData);
-  } catch (error) {
-    return null;
-  }
-}
-
-/**
- * Vérifie si le manager est connecté.
- */
-function isManagerLoggedIn() {
-  const user = getCurrentUser();
-  return user && user.role === "admin";
-}
-
-/**
- * Récupérer les agents.
- */
 async function getAgents() {
-  initializeLocalDatabase();
-  return readStorage(STORAGE_KEYS.agents);
+  const db   = getDb();
+  const snap = await db.collection("agents").get();
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
-/**
- * Récupérer la production.
- */
-async function getProduction() {
-  initializeLocalDatabase();
-  return readStorage(STORAGE_KEYS.production);
+async function getAgentByEmail(email) {
+  const db   = getDb();
+  const snap = await db.collection("agents").where("email", "==", email).get();
+  if (!snap.empty) return { id: snap.docs[0].id, ...snap.docs[0].data() };
+  return null;
 }
 
-/**
- * Enregistrer la production complète.
- */
-async function saveProduction(productionRows) {
-  writeStorage(STORAGE_KEYS.production, productionRows);
-  return {
-    success: true,
-    message: "Production enregistrée localement."
+async function getOrCreateAgent(user) {
+  const existing = await getAgentByEmail(user.email);
+  if (existing) return existing;
+  const data = {
+    name:   user.name  || user.email,
+    email:  user.email,
+    team:   "ARC+",
+    role:   ACCESS_CONTROL.isAdmin(user.email) ? "admin" : "agent",
+    active: true
   };
+  const ref = await getDb().collection("agents").add(data);
+  return { id: ref.id, ...data };
 }
 
-/**
- * Ajouter plusieurs lignes de production.
- */
+async function saveAgent(agentData) {
+  const db       = getDb();
+  const existing = await db.collection("agents").where("email", "==", agentData.email).get();
+  const data = {
+    name:   agentData.name   || "",
+    email:  agentData.email  || "",
+    team:   agentData.team   || "ARC+",
+    role:   agentData.role   || "agent",
+    active: agentData.active !== false
+  };
+  if (!existing.empty) {
+    await existing.docs[0].ref.update(data);
+    return { success: true, id: existing.docs[0].id };
+  }
+  const ref = await db.collection("agents").add(data);
+  return { success: true, id: ref.id };
+}
+
+/* ================================================
+   PRODUCTION
+================================================ */
+
+async function getProduction(filters = {}) {
+  const db   = getDb();
+  let query  = db.collection("production");
+
+  // On filtre côté serveur sur un seul champ pour éviter les index composites
+  if (filters.agentEmail) {
+    query = query.where("agentEmail", "==", filters.agentEmail);
+  } else if (filters.agentId) {
+    query = query.where("agentId", "==", filters.agentId);
+  } else if (filters.team) {
+    query = query.where("team", "==", filters.team);
+  }
+
+  const snap    = await query.get();
+  let results   = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  // Filtres complémentaires côté client
+  if (filters.date)    results = results.filter(r => r.date === filters.date);
+  if (filters.team && !filters.agentEmail && !filters.agentId)
+                       results = results.filter(r => r.team === filters.team);
+
+  return results.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+}
+
 async function addProductionRows(rows) {
-  const currentProduction = await getProduction();
-
+  const db    = getDb();
+  const batch = db.batch();
   const newRows = rows.map(row => {
-    return {
-      id: row.id || generateId("prod"),
-      date: row.date || getTodayDate(),
-      agentId: row.agentId || "",
-      agentName: row.agentName || "",
-      team: row.team || "",
-      activity: row.activity || "",
-      quantity: Number(row.quantity || 0),
-      source: row.source || "excel"
+    const ref  = db.collection("production").doc();
+    const data = {
+      date:        row.date        || getTodayDate(),
+      agentId:     row.agentId     || "",
+      agentName:   row.agentName   || "",
+      agentEmail:  row.agentEmail  || "",
+      team:        row.team        || "",
+      activity:    row.activity    || "",
+      affectation: row.affectation || "",
+      info:        row.info        || "",
+      quantity:    Number(row.quantity || 0),
+      source:      row.source      || "manual",
+      createdAt:   firebase.firestore.FieldValue.serverTimestamp()
     };
+    batch.set(ref, data);
+    return { id: ref.id, ...data };
   });
-
-  const updatedProduction = [...currentProduction, ...newRows];
-
-  await saveProduction(updatedProduction);
-
-  return {
-    success: true,
-    message: `${newRows.length} ligne(s) ajoutée(s).`,
-    rows: newRows
-  };
+  await batch.commit();
+  return { success: true, message: `${rows.length} ligne(s) ajoutée(s).`, rows: newRows };
 }
 
-/**
- * Récupérer les programmes.
- */
-async function getProgrammes() {
-  initializeLocalDatabase();
-  return readStorage(STORAGE_KEYS.programmes);
+async function saveProduction(productionRows) {
+  return addProductionRows(productionRows);
 }
 
-/**
- * Enregistrer ou mettre à jour un programme agent.
- */
+/* ================================================
+   PROGRAMMES
+================================================ */
+
+async function getProgrammes(agentEmail = null) {
+  const db   = getDb();
+  let query  = db.collection("programmes");
+  if (agentEmail) query = query.where("agentEmail", "==", agentEmail);
+  const snap = await query.get();
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+}
+
 async function saveProgramme(programme) {
-  const programmes = await getProgrammes();
+  const db  = getDb();
+  const snap = await db.collection("programmes")
+    .where("agentEmail", "==", programme.agentEmail)
+    .where("date",       "==", programme.date)
+    .get();
 
-  const newProgramme = {
-    id: programme.id || generateId("prog"),
-    date: programme.date,
-    agentId: programme.agentId,
-    activity: programme.activity,
-    target: Number(programme.target || 0),
-    priority: programme.priority || "normale",
-    message: programme.message || "",
-    updatedBy: programme.updatedBy || ""
+  const data = {
+    date:       programme.date,
+    agentId:    programme.agentId    || "",
+    agentEmail: programme.agentEmail || "",
+    agentName:  programme.agentName  || "",
+    activity:   programme.activity   || "",
+    target:     Number(programme.target || 0),
+    priority:   programme.priority   || "normale",
+    message:    programme.message    || "",
+    updatedBy:  programme.updatedBy  || "",
+    updatedAt:  firebase.firestore.FieldValue.serverTimestamp()
   };
 
-  const existingIndex = programmes.findIndex(item => {
-    return item.date === newProgramme.date && item.agentId === newProgramme.agentId;
-  });
-
-  if (existingIndex >= 0) {
-    programmes[existingIndex] = {
-      ...programmes[existingIndex],
-      ...newProgramme
-    };
-  } else {
-    programmes.push(newProgramme);
+  if (!snap.empty) {
+    await snap.docs[0].ref.update(data);
+    return { success: true, message: "Programme mis à jour.", id: snap.docs[0].id };
   }
-
-  writeStorage(STORAGE_KEYS.programmes, programmes);
-
-  return {
-    success: true,
-    message: "Programme enregistré.",
-    programme: newProgramme
-  };
+  const ref = await db.collection("programmes").add({
+    ...data,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  return { success: true, message: "Programme enregistré.", id: ref.id };
 }
 
-/**
- * Réinitialiser les données de démonstration.
- * Fonction utile pendant les tests.
- */
-function resetLocalDatabase() {
-  localStorage.removeItem(STORAGE_KEYS.agents);
-  localStorage.removeItem(STORAGE_KEYS.production);
-  localStorage.removeItem(STORAGE_KEYS.programmes);
-  localStorage.removeItem(STORAGE_KEYS.currentUser);
+/* ================================================
+   ANNONCES
+================================================ */
 
-  initializeLocalDatabase();
+async function getAnnouncements() {
+  const db   = getDb();
+  const snap = await db.collection("announcements")
+    .where("active", "==", true)
+    .get();
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => {
+      const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return tb - ta;
+    });
 }
 
-
-/**
- * Connexion agent temporaire par email.
- */
-async function loginAgent(email) {
-  const agents = await getAgents();
-
-  const user = agents.find(agent => {
-    return (
-      agent.email.toLowerCase() === email.toLowerCase() &&
-      agent.role === "agent" &&
-      agent.active === true
-    );
-  });
-
-  if (!user) {
-    return {
-      success: false,
-      message: "Aucun agent actif trouvé avec cet email."
-    };
-  }
-
-  localStorage.setItem(STORAGE_KEYS.currentUser, JSON.stringify(user));
-
-  return {
-    success: true,
-    message: "Connexion réussie.",
-    user
+async function saveAnnouncement(announcement) {
+  const db   = getDb();
+  const data = {
+    title:      announcement.title      || "",
+    content:    announcement.content    || "",
+    category:   announcement.category   || "info",
+    priority:   announcement.priority   || "normale",
+    targetRole: announcement.targetRole || "all",
+    author:     announcement.author     || "",
+    active:     true,
+    updatedAt:  firebase.firestore.FieldValue.serverTimestamp()
   };
+  if (announcement.id) {
+    await db.collection("announcements").doc(announcement.id).update(data);
+    return { success: true, id: announcement.id };
+  }
+  const ref = await db.collection("announcements").add({
+    ...data,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  return { success: true, id: ref.id };
+}
+
+async function deleteAnnouncement(id) {
+  await getDb().collection("announcements").doc(id).update({ active: false });
+  return { success: true };
+}
+
+/* ================================================
+   MESSAGES
+================================================ */
+
+async function getMessages(userEmail) {
+  const db   = getDb();
+  const snap = await db.collection("messages").get();
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(m => m.targetEmail === "all" || m.targetEmail === userEmail || m.fromEmail === userEmail)
+    .sort((a, b) => {
+      const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return tb - ta;
+    });
+}
+
+async function sendMessage(message) {
+  const ref = await getDb().collection("messages").add({
+    subject:     message.subject     || "",
+    content:     message.content     || "",
+    fromEmail:   message.fromEmail   || "",
+    fromName:    message.fromName    || "",
+    targetEmail: message.targetEmail || "all",
+    targetName:  message.targetName  || "Tous les utilisateurs",
+    readBy:      [],
+    createdAt:   firebase.firestore.FieldValue.serverTimestamp()
+  });
+  return { success: true, id: ref.id };
+}
+
+async function markMessageRead(messageId, userEmail) {
+  await getDb().collection("messages").doc(messageId).update({
+    readBy: firebase.firestore.FieldValue.arrayUnion(userEmail)
+  });
+}
+
+async function deleteMessage(id) {
+  await getDb().collection("messages").doc(id).delete();
+  return { success: true };
+}
+
+/* ================================================
+   SECTIONS (blocs d'info pour les utilisateurs)
+================================================ */
+
+async function getSections() {
+  const db   = getDb();
+  const snap = await db.collection("sections").where("active", "==", true).get();
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+}
+
+async function getAllSections() {
+  const db   = getDb();
+  const snap = await db.collection("sections").get();
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+}
+
+async function saveSection(section) {
+  const db   = getDb();
+  const data = {
+    title:      section.title      || "",
+    content:    section.content    || "",
+    icon:       section.icon       || "📄",
+    category:   section.category   || "general",
+    order:      Number(section.order || 0),
+    active:     section.active !== false,
+    createdBy:  section.createdBy  || "",
+    updatedAt:  firebase.firestore.FieldValue.serverTimestamp()
+  };
+  if (section.id) {
+    await db.collection("sections").doc(section.id).update(data);
+    return { success: true, id: section.id };
+  }
+  const ref = await db.collection("sections").add({
+    ...data,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  return { success: true, id: ref.id };
+}
+
+async function deleteSection(id) {
+  await getDb().collection("sections").doc(id).update({ active: false });
+  return { success: true };
 }
