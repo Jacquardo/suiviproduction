@@ -1,300 +1,218 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Administration - Suivi Production ARC+</title>
 
-  <link rel="stylesheet" href="./css/style.css" />
-  <link rel="stylesheet" href="./css/admin.css" />
-  <link rel="manifest" href="./manifest.json" />
-  <link rel="stylesheet" href="./css/additions.css" />
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
-  <meta name="theme-color" content="#2563eb" />
-</head>
-<body>
-<header class="admin-header">
-  <div class="admin-header-brand">
-    <div class="admin-header-icon">📊</div>
-    <div>
-      <h1>Administration</h1>
-      <p>Suivi global de la production ARC+</p>
-    </div>
-  </div>
-  <nav class="admin-nav">
-    <a href="./index.html">🏠 Accueil</a>
-    <button id="logoutBtn" type="button">↩ Déconnexion</button>
-  </nav>
-</header>
-  <main class="admin-container">
-
-    <!-- Connexion manager -->
-    <section class="admin-section" id="loginSection">
-      <div class="section-header">
-        <h2>Connexion manager</h2>
-        <p>Identifiez-vous pour accéder à l’espace administrateur.</p>
-      </div>
-
-      <div class="login-box">
-        <label for="managerEmail">Email manager</label>
-        <input
-          type="email"
-          id="managerEmail"
-          placeholder="exemple: manager@keobiz.fr"
-        />
-
-        <label for="managerCode">Code d’accès</label>
-        <input
-          type="password"
-          id="managerCode"
-          placeholder="Code administrateur"
-        />
-
-        <button id="loginBtn" type="button" class="primary-button">
-          Se connecter
-        </button>
-
-        <p id="loginMessage" class="message"></p>
-      </div>
-    </section>
-
-    <!-- Contenu administrateur -->
-    <section id="adminContent" class="hidden">
-
-      <!-- Indicateurs clés -->
-      <section class="admin-section">
-        <div class="section-header">
-          <h2>Indicateurs clés</h2>
-          <p>Vue rapide de la production globale.</p>
-        </div>
-
-<div class="kpi-grid">
-  <div class="kpi-card">
-    <span class="kpi-card-icon">📦</span>
-    <span class="kpi-label">Production totale</span>
-    <strong id="kpiTotalProduction">0</strong>
-  </div>
-  <div class="kpi-card">
-    <span class="kpi-card-icon">👥</span>
-    <span class="kpi-label">Agents actifs</span>
-    <strong id="kpiActiveAgents">0</strong>
-  </div>
-  <div class="kpi-card">
-    <span class="kpi-card-icon">📈</span>
-    <span class="kpi-label">Production moyenne</span>
-    <strong id="kpiAverageProduction">0</strong>
-  </div>
-  <div class="kpi-card">
-    <span class="kpi-card-icon">🏆</span>
-    <span class="kpi-label">Meilleur agent</span>
-    <strong id="kpiBestAgent">-</strong>
-  </div>
-</div>
-      </section>
-
-      <!-- Graphiques de production -->
-<section class="admin-section" id="chartsSection">
-  <div class="section-header">
-    <h2>📊 Graphiques de production</h2>
-    <p>Visualisation en temps réel — mis à jour selon les filtres actifs.</p>
-  </div>
-
-  <!-- Ligne 1 : Affectation + Agent -->
-  <div class="charts-grid">
-    <div class="chart-card">
-      <div class="chart-container">
-        <canvas id="chartByAffectation"></canvas>
-      </div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-container">
-        <canvas id="chartByAgent"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <!-- Ligne 2 : Désignation (horizontal) -->
-  <div style="margin-top:16px;">
-    <div class="chart-card">
-      <div class="chart-container-sm">
-        <canvas id="chartByDesignation"></canvas>
-      </div>
-    </div>
-  </div>
-</section>
-
-      <!-- Import Excel -->
-      <section class="admin-section">
-        <div class="section-header">
-          <h2>Import du fichier Excel</h2>
-          <p>Importer un fichier de production au format Excel.</p>
-        </div>
-
-        <div class="import-box">
-          <input
-            type="file"
-            id="excelFile"
-            accept=".xlsx,.xls"
-          />
-
-          <div class="button-row">
-            <button id="previewExcelBtn" type="button" class="secondary-button">
-              Prévisualiser
-            </button>
-
-            <button id="saveExcelBtn" type="button" class="primary-button">
-              Enregistrer
-            </button>
-          </div>
-
-          <p id="importStatus" class="message"></p>
-        </div>
-      </section>
-
-      <!-- Filtres -->
-      <section class="admin-section">
-        <div class="section-header">
-          <h2>Filtres</h2>
-          <p>Filtrer les données par date, agent ou équipe.</p>
-        </div>
-
-        <div class="filters-grid">
-          <div class="form-group">
-            <label for="filterDate">Date</label>
-            <input type="date" id="filterDate" />
-          </div>
-
-          <div class="form-group">
-            <label for="filterAgent">Agent</label>
-            <select id="filterAgent">
-              <option value="">Tous les agents</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="filterTeam">Équipe</label>
-            <select id="filterTeam">
-              <option value="">Toutes les équipes</option>
-            </select>
-          </div>
-
-          <div class="form-group filter-actions">
-            <button id="applyFiltersBtn" type="button" class="primary-button">
-              Appliquer
-            </button>
-
-            <button id="resetFiltersBtn" type="button" class="secondary-button">
-              Réinitialiser
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Tableau global de production -->
       <section class="admin-section">
         <div class="section-header">
           <h2>Tableau global de production</h2>
-          <p>Liste des productions importées ou enregistrées.</p>
+          <p>Les 300 dernières lignes.</p>
         </div>
-
         <div class="table-wrapper">
           <table class="data-table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Agent</th>
-                <th>Équipe</th>
-                <th>Activité</th>
-                <th>Quantité</th>
-                <th>Source</th>
+                <th>Date</th><th>Agent</th><th>Équipe</th>
+                <th>Activité</th><th>Quantité</th><th>Source</th>
               </tr>
             </thead>
-
             <tbody id="productionTableBody">
-              <tr>
-                <td colspan="6" class="empty-table">
-                  Aucune donnée disponible pour le moment.
-                </td>
-              </tr>
+              <tr><td colspan="6" class="empty-table">Aucune donnée disponible.</td></tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <!-- Liste des agents -->
+    </div>
+
+    <!-- =================== ONGLET AGENTS =================== -->
+    <div id="tabAgents" class="admin-tab-panel hidden">
       <section class="admin-section">
         <div class="section-header">
           <h2>Liste des agents</h2>
-          <p>Agents enregistrés dans l’application.</p>
+          <p>Agents enregistrés dans Firestore (créés automatiquement à la première connexion).</p>
         </div>
-
         <div class="table-wrapper">
           <table class="data-table">
             <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nom</th>
-                <th>Email</th>
-                <th>Équipe</th>
-                <th>Statut</th>
-              </tr>
+              <tr><th>ID</th><th>Nom</th><th>Email</th><th>Équipe</th><th>Statut</th></tr>
             </thead>
-
             <tbody id="agentsTableBody">
-              <tr>
-                <td colspan="5" class="empty-table">
-                  Aucun agent chargé.
-                </td>
-              </tr>
+              <tr><td colspan="5" class="empty-table">Aucun agent chargé.</td></tr>
             </tbody>
           </table>
         </div>
       </section>
+    </div>
 
-      <!-- Modification du programme agent -->
+    <!-- =================== ONGLET SECTIONS =================== -->
+    <div id="tabSections" class="admin-tab-panel hidden">
+
+      <section class="admin-section">
+        <div class="section-header">
+          <h2 id="sectionFormTitle">Nouvelle section</h2>
+          <p>Créez des blocs d'information visibles dans l'espace utilisateur.</p>
+        </div>
+        <form id="sectionForm" class="program-form">
+          <input type="hidden" id="sectionEditId" />
+          <div class="form-group">
+            <label for="sectionTitle">Titre *</label>
+            <input type="text" id="sectionTitle" placeholder="Titre de la section" required />
+          </div>
+          <div class="form-group">
+            <label for="sectionIcon">Icône (emoji)</label>
+            <input type="text" id="sectionIcon" value="📄" placeholder="📄" />
+          </div>
+          <div class="form-group">
+            <label for="sectionCategory">Catégorie</label>
+            <select id="sectionCategory">
+              <option value="general">Général</option>
+              <option value="processus">Processus</option>
+              <option value="ressources">Ressources</option>
+              <option value="formation">Formation</option>
+              <option value="outils">Outils</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="sectionOrder">Ordre d'affichage</label>
+            <input type="number" id="sectionOrder" value="0" min="0" />
+          </div>
+          <div class="form-group full-width">
+            <label for="sectionContent">Contenu * <span class="optional-label">(HTML basique accepté : &lt;b&gt;, &lt;a&gt;, &lt;br&gt;, listes…)</span></label>
+            <textarea id="sectionContent" rows="7" placeholder="Contenu de la section…" required></textarea>
+          </div>
+          <div class="form-actions full-width">
+            <button type="submit" class="primary-button">💾 Enregistrer</button>
+            <button type="button" class="secondary-button" onclick="resetSectionForm()">✕ Annuler</button>
+          </div>
+          <p id="sectionStatus" class="message full-width"></p>
+        </form>
+      </section>
+
+      <section class="admin-section">
+        <div class="section-header"><h2>Sections publiées</h2></div>
+        <div id="sectionsListAdmin"></div>
+      </section>
+
+    </div>
+
+    <!-- =================== ONGLET ANNONCES =================== -->
+    <div id="tabAnnouncements" class="admin-tab-panel hidden">
+
+      <section class="admin-section">
+        <div class="section-header">
+          <h2>Publier une annonce</h2>
+          <p>Processus, absences, actualités… Les annonces s'affichent dans l'espace utilisateur.</p>
+        </div>
+        <form id="announcementForm" class="program-form">
+          <div class="form-group">
+            <label for="announcementTitle">Titre *</label>
+            <input type="text" id="announcementTitle" placeholder="Titre de l'annonce" required />
+          </div>
+          <div class="form-group">
+            <label for="announcementCategory">Catégorie</label>
+            <select id="announcementCategory">
+              <option value="info">ℹ️ Information</option>
+              <option value="processus">📋 Processus</option>
+              <option value="absence">🏖️ Absence</option>
+              <option value="urgent">🚨 Urgent</option>
+              <option value="actu">📰 Actualité</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="announcementPriority">Priorité</label>
+            <select id="announcementPriority">
+              <option value="normale">Normale</option>
+              <option value="haute">Haute</option>
+              <option value="urgente">Urgente</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="announcementTarget">Destinataires</label>
+            <select id="announcementTarget">
+              <option value="all">Tous</option>
+              <option value="user">Utilisateurs seulement</option>
+              <option value="admin">Administrateurs seulement</option>
+            </select>
+          </div>
+          <div class="form-group full-width">
+            <label for="announcementContent">Contenu *</label>
+            <textarea id="announcementContent" rows="5" placeholder="Contenu de l'annonce…" required></textarea>
+          </div>
+          <div class="form-actions full-width">
+            <button type="submit" class="primary-button">📢 Publier l'annonce</button>
+          </div>
+          <p id="announcementStatus" class="message full-width"></p>
+        </form>
+      </section>
+
+      <section class="admin-section">
+        <div class="section-header"><h2>Annonces publiées</h2></div>
+        <div id="announcementsListAdmin"></div>
+      </section>
+
+    </div>
+
+    <!-- =================== ONGLET MESSAGES =================== -->
+    <div id="tabMessages" class="admin-tab-panel hidden">
+
+      <section class="admin-section">
+        <div class="section-header">
+          <h2>Envoyer un message</h2>
+          <p>Envoyez un message à un utilisateur spécifique ou à tous les utilisateurs.</p>
+        </div>
+        <form id="messageForm" class="program-form">
+          <div class="form-group">
+            <label for="messageTarget">Destinataire</label>
+            <select id="messageTarget">
+              <option value="all">📢 Tous les utilisateurs</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="messageSubject">Objet</label>
+            <input type="text" id="messageSubject" placeholder="Objet du message" />
+          </div>
+          <div class="form-group full-width">
+            <label for="messageContent">Message *</label>
+            <textarea id="messageContent" rows="5" placeholder="Contenu du message…" required></textarea>
+          </div>
+          <div class="form-actions full-width">
+            <button type="submit" class="primary-button">✉️ Envoyer</button>
+          </div>
+          <p id="messageStatus" class="message full-width"></p>
+        </form>
+      </section>
+
+      <section class="admin-section">
+        <div class="section-header"><h2>Historique des messages</h2></div>
+        <div id="messagesListAdmin"></div>
+      </section>
+
+    </div>
+
+    <!-- =================== ONGLET PROGRAMME =================== -->
+    <div id="tabProgramme" class="admin-tab-panel hidden">
       <section class="admin-section">
         <div class="section-header">
           <h2>Programme agent</h2>
-          <p>Modifier le programme ou le message visible par un agent.</p>
+          <p>Définissez l'activité, l'objectif et le message visible par un agent.</p>
         </div>
-
         <form id="programForm" class="program-form">
           <div class="form-group">
-            <label for="programAgent">Agent</label>
+            <label for="programAgent">Agent *</label>
             <select id="programAgent" required>
               <option value="">Sélectionner un agent</option>
             </select>
           </div>
-
           <div class="form-group">
-            <label for="programDate">Date</label>
+            <label for="programDate">Date *</label>
             <input type="date" id="programDate" required />
           </div>
-
           <div class="form-group">
-            <label for="programActivity">Activité</label>
-            <input
-              type="text"
-              id="programActivity"
-              placeholder="Exemple: Relance J+7"
-              required
-            />
+            <label for="programActivity">Activité *</label>
+            <input type="text" id="programActivity" placeholder="Ex : Relance J+7" required />
           </div>
-
           <div class="form-group">
-            <label for="programTarget">Objectif</label>
-            <input
-              type="number"
-              id="programTarget"
-              placeholder="Exemple: 50"
-              min="0"
-              required
-            />
+            <label for="programTarget">Objectif *</label>
+            <input type="number" id="programTarget" placeholder="Ex : 50" min="0" required />
           </div>
-
           <div class="form-group">
             <label for="programPriority">Priorité</label>
             <select id="programPriority">
@@ -303,41 +221,40 @@
               <option value="urgente">Urgente</option>
             </select>
           </div>
-
           <div class="form-group full-width">
-            <label for="programMessage">Message visible par l’agent</label>
-            <textarea
-              id="programMessage"
-              rows="4"
-              placeholder="Écrire une information ou une consigne..."
-            ></textarea>
+            <label for="programMessage">Message visible par l'agent</label>
+            <textarea id="programMessage" rows="4" placeholder="Consigne ou information…"></textarea>
           </div>
-
           <div class="form-actions full-width">
-            <button type="submit" class="primary-button">
-              Enregistrer le programme
-            </button>
+            <button type="submit" class="primary-button">💾 Enregistrer le programme</button>
           </div>
-
           <p id="programMessageStatus" class="message full-width"></p>
         </form>
       </section>
+    </div>
 
-    </section>
-  </main>
+  </div><!-- /admin-container -->
+</div><!-- /adminContent -->
 
-  <footer class="app-footer">
-    <p>Suivi Production ARC+ - Administration</p>
-  </footer>
+<footer class="app-footer">
+  <p>Suivi Production ARC+ &nbsp;·&nbsp; Administration</p>
+</footer>
 
-  <!-- Librairie pour lire les fichiers Excel -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<!-- Librairies -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- App -->
+<script src="./js/firebase-config.js"></script>
+<script src="./js/auth.js"></script>
 <script src="./js/app.js"></script>
 <script src="./js/api.js"></script>
-<script src="./js/excel-import.js"></script>
 <script src="./js/charts.js"></script>
+<script src="./js/excel-import.js"></script>
 <script src="./js/admin.js"></script>
-  
+
 </body>
 </html>
