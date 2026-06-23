@@ -1,315 +1,147 @@
-/* =========================
-   PAGE UTILISATEUR / AGENT
-   Suivi Production ARC+
-========================= */
+btn" data-target="agentTabKpis">📊 Indicateurs</button>
+      <button class="agent-tab-btn" data-target="agentTabProgramme">📅 Programme</button>
+      <button class="agent-tab-btn" data-target="agentTabAnnouncements">
+        📢 Annonces <span id="announcementsCount" class="tab-badge" style="display:none;">0</span>
+      </button>
+      <button class="agent-tab-btn" data-target="agentTabMessages">
+        ✉️ Messages <span id="messagesCount" class="tab-badge" style="display:none;">0</span>
+      </button>
+      <button class="agent-tab-btn" data-target="agentTabSections">📄 Informations</button>
+      <button class="agent-tab-btn" data-target="agentTabProduction">✏️ Ma production</button>
+    </nav>
 
-let currentAgent = null;
-let agentProductionRows = [];
-let agentProgrammes = [];
-
-document.addEventListener("DOMContentLoaded", async () => {
-  initializeLocalDatabase();
-  bindAgentEvents();
-
-  const savedUser = getCurrentUser();
-
-  if (savedUser && savedUser.role === "agent") {
-    currentAgent = savedUser;
-    showAgentContent();
-    await loadAgentData();
-  } else {
-    showAgentLoginSection();
-  }
-});
-
-/**
- * Brancher les événements de la page agent.
- */
-function bindAgentEvents() {
-  const agentLoginBtn = document.getElementById("agentLoginBtn");
-  const agentLogoutBtn = document.getElementById("agentLogoutBtn");
-
-  if (agentLoginBtn) {
-    agentLoginBtn.addEventListener("click", handleAgentLogin);
-  }
-
-  if (agentLogoutBtn) {
-    agentLogoutBtn.addEventListener("click", handleAgentLogout);
-  }
-}
-
-/**
- * Affiche la connexion agent.
- */
-function showAgentLoginSection() {
-  const loginSection = document.getElementById("agentLoginSection");
-  const agentContent = document.getElementById("agentContent");
-
-  if (loginSection) {
-    loginSection.classList.remove("hidden");
-  }
-
-  if (agentContent) {
-    agentContent.classList.add("hidden");
-  }
-}
-
-/**
- * Affiche le contenu agent.
- */
-function showAgentContent() {
-  const loginSection = document.getElementById("agentLoginSection");
-  const agentContent = document.getElementById("agentContent");
-
-  if (loginSection) loginSection.classList.add("hidden");
-  if (agentContent) agentContent.classList.remove("hidden");
-
-  // Initialise le formulaire de saisie
-  initProductionEntry();
-}
-
-/**
- * Connexion agent simple par email.
- */
-async function handleAgentLogin() {
-  const emailInput = document.getElementById("agentEmail");
-  const message = document.getElementById("agentLoginMessage");
-
-  const email = emailInput.value.trim();
-
-  if (!email) {
-    message.textContent = "Veuillez saisir votre email.";
-    message.className = "message error";
-    return;
-  }
-
-  const result = await loginAgent(email);
-
-  if (!result.success) {
-    message.textContent = result.message;
-    message.className = "message error";
-    return;
-  }
-
-  currentAgent = result.user;
-
-  message.textContent = result.message;
-  message.className = "message success";
-
-  showAgentContent();
-  await loadAgentData();
-}
-
-/**
- * Déconnexion agent.
- */
-function handleAgentLogout() {
-  logoutUser();
-  currentAgent = null;
-  showAgentLoginSection();
-}
-
-/**
- * Charger les données personnelles de l’agent.
- */
-async function loadAgentData() {
-  if (!currentAgent) return;
-
-  const production = await getProduction();
-  const programmes = await getProgrammes();
-
-  agentProductionRows = production.filter(row => {
-    return row.agentId === currentAgent.id;
-  });
-
-  agentProgrammes = programmes.filter(programme => {
-    return programme.agentId === currentAgent.id;
-  });
-
-  renderAgentIdentity();
-  renderAgentProductionTable(agentProductionRows);
-  renderAgentProgram();
-  updateAgentKpis();
-}
-
-/**
- * Afficher l’identité de l’agent.
- */
-function renderAgentIdentity() {
-  const nameEl = document.getElementById("agentWelcomeName");
-  const teamEl = document.getElementById("agentTeamName");
-  const todayEl = document.getElementById("todayDateLabel");
-
-  if (nameEl) {
-    nameEl.textContent = currentAgent.name;
-  }
-
-  if (teamEl) {
-    teamEl.textContent = `Équipe : ${currentAgent.team || "-"}`;
-  }
-
-  if (todayEl) {
-    todayEl.textContent = formatDateFr(getTodayDate());
-  }
-}
-
-/**
- * Afficher le programme de l’agent.
- */
-function renderAgentProgram() {
-  const programCard = document.getElementById("agentProgramCard");
-
-  if (!programCard) return;
-
-  const today = getTodayDate();
-
-  let todayProgram = agentProgrammes.find(programme => {
-    return programme.date === today;
-  });
-
-  if (!todayProgram && agentProgrammes.length > 0) {
-    todayProgram = agentProgrammes[0];
-  }
-
-  if (!todayProgram) {
-    programCard.innerHTML = `
-      <p class="empty-message">
-        Aucun programme disponible pour le moment.
-      </p>
-    `;
-    return;
-  }
-
-  const priorityLabel = getPriorityLabel(todayProgram.priority);
-
-  programCard.innerHTML = `
-    <h3 class="program-title">${todayProgram.activity || "Programme"}</h3>
-
-    <div class="program-meta">
-      <div class="program-meta-item">
-        <span>Date</span>
-        <strong>${formatDateFr(todayProgram.date)}</strong>
-      </div>
-
-      <div class="program-meta-item">
-        <span>Objectif</span>
-        <strong>${Number(todayProgram.target || 0)}</strong>
-      </div>
-
-      <div class="program-meta-item">
-        <span>Priorité</span>
-        <strong>${priorityLabel}</strong>
-      </div>
+    <!-- =================== ONGLET INDICATEURS =================== -->
+    <div id="agentTabKpis" class="agent-tab-panel hidden">
+      <section class="agent-section">
+        <div class="section-header">
+          <h2>Mes indicateurs</h2>
+          <p>Résumé rapide de votre production.</p>
+        </div>
+        <div class="agent-kpi-grid">
+          <div class="agent-kpi-card">
+            <span>Production du jour</span>
+            <strong id="agentKpiToday">0</strong>
+          </div>
+          <div class="agent-kpi-card">
+            <span>Objectif du jour</span>
+            <strong id="agentKpiTarget">0</strong>
+          </div>
+          <div class="agent-kpi-card">
+            <span>Taux d'atteinte</span>
+            <strong id="agentKpiRate">0%</strong>
+          </div>
+          <div class="agent-kpi-card">
+            <span>Total historique</span>
+            <strong id="agentKpiTotal">0</strong>
+          </div>
+        </div>
+      </section>
     </div>
 
-    <div class="program-message">
-      ${todayProgram.message || "Aucun message manager."}
+    <!-- =================== ONGLET PROGRAMME =================== -->
+    <div id="agentTabProgramme" class="agent-tab-panel hidden">
+      <section class="agent-section">
+        <div class="section-header">
+          <h2>Mon programme</h2>
+          <p>Programme publié par le manager pour aujourd'hui.</p>
+        </div>
+        <div id="agentProgramCard" class="program-card">
+          <p class="empty-message">Aucun programme disponible pour aujourd'hui.</p>
+        </div>
+      </section>
     </div>
-  `;
-}
 
-/**
- * Afficher le tableau personnel de production.
- */
-function renderAgentProductionTable(rows) {
-  const tbody = document.getElementById("agentProductionTableBody");
+    <!-- =================== ONGLET ANNONCES =================== -->
+    <div id="agentTabAnnouncements" class="agent-tab-panel hidden">
+      <section class="agent-section">
+        <div class="section-header">
+          <h2>Annonces</h2>
+          <p>Informations publiées par l'administration.</p>
+        </div>
+        <div id="agentAnnouncementsList">
+          <p class="empty-message">Chargement…</p>
+        </div>
+      </section>
+    </div>
 
-  if (!tbody) return;
+    <!-- =================== ONGLET MESSAGES =================== -->
+    <div id="agentTabMessages" class="agent-tab-panel hidden">
+      <section class="agent-section">
+        <div class="section-header">
+          <h2>Mes messages</h2>
+          <p>Messages reçus de l'administration.</p>
+        </div>
+        <div id="agentMessagesList">
+          <p class="empty-message">Chargement…</p>
+        </div>
+      </section>
+    </div>
 
-  if (!rows.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="4" class="empty-table">
-          Aucune production disponible.
-        </td>
-      </tr>
-    `;
-    return;
-  }
+    <!-- =================== ONGLET SECTIONS / INFORMATIONS =================== -->
+    <div id="agentTabSections" class="agent-tab-panel hidden">
+      <section class="agent-section">
+        <div class="section-header">
+          <h2>Informations</h2>
+          <p>Documents et ressources mis à disposition par l'administration.</p>
+        </div>
+        <div id="agentSectionsList">
+          <p class="empty-message">Chargement…</p>
+        </div>
+      </section>
+    </div>
 
-  const sortedRows = [...rows].sort((a, b) => {
-    return new Date(b.date) - new Date(a.date);
-  });
+    <!-- =================== ONGLET PRODUCTION =================== -->
+    <div id="agentTabProduction" class="agent-tab-panel hidden">
 
-  tbody.innerHTML = sortedRows
-    .map(row => {
-      return `
-        <tr>
-          <td>${formatDateFr(row.date)}</td>
-          <td>${row.activity || "-"}</td>
-          <td>${Number(row.quantity || 0)}</td>
-          <td>${row.source || "-"}</td>
-        </tr>
-      `;
-    })
-    .join("");
-}
+      <section class="agent-section">
+        <div class="section-header">
+          <h2>📝 Saisir ma production du jour</h2>
+          <p>Sélectionnez une désignation, une affectation et entrez la quantité traitée.</p>
+        </div>
+        <div id="productionEntryContainer">
+          <p class="empty-message">Chargement du formulaire…</p>
+        </div>
+      </section>
 
-/**
- * Mettre à jour les indicateurs agent.
- */
-function updateAgentKpis() {
-  const today = getTodayDate();
+      <section class="agent-section">
+        <div class="section-header">
+          <h2>Mon tableau de production</h2>
+          <p>Votre suivi personnel de production.</p>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th><th>Activité</th><th>Quantité</th><th>Source</th>
+              </tr>
+            </thead>
+            <tbody id="agentProductionTableBody">
+              <tr><td colspan="4" class="empty-table">Aucune production disponible.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-  const todayRows = agentProductionRows.filter(row => {
-    return row.date === today;
-  });
+    </div>
 
-  const todayProduction = todayRows.reduce((sum, row) => {
-    return sum + Number(row.quantity || 0);
-  }, 0);
+  </div><!-- /agent-container -->
+</div><!-- /agentContent -->
 
-  const totalProduction = agentProductionRows.reduce((sum, row) => {
-    return sum + Number(row.quantity || 0);
-  }, 0);
+<footer class="app-footer">
+  <p>Suivi Production ARC+ &nbsp;·&nbsp; Espace utilisateur</p>
+</footer>
 
-  let todayProgram = agentProgrammes.find(programme => {
-    return programme.date === today;
-  });
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<!-- App -->
+<script src="./js/firebase-config.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/app.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/production-entry.js"></script>
+<script src="./js/agent.js"></script>
 
-  if (!todayProgram && agentProgrammes.length > 0) {
-    todayProgram = agentProgrammes[0];
-  }
-
-  const target = todayProgram ? Number(todayProgram.target || 0) : 0;
-
-  const rate = target > 0
-    ? Math.round((todayProduction / target) * 100)
-    : 0;
-
-  const todayEl = document.getElementById("agentKpiToday");
-  const targetEl = document.getElementById("agentKpiTarget");
-  const rateEl = document.getElementById("agentKpiRate");
-  const totalEl = document.getElementById("agentKpiTotal");
-
-  if (todayEl) todayEl.textContent = todayProduction;
-  if (targetEl) targetEl.textContent = target;
-  if (totalEl) totalEl.textContent = totalProduction;
-
-  if (rateEl) {
-    rateEl.textContent = `${rate}%`;
-
-    rateEl.classList.remove(
-      "agent-rate-good",
-      "agent-rate-warning",
-      "agent-rate-danger"
-    );
-
-    if (rate >= 100) {
-      rateEl.classList.add("agent-rate-good");
-    } else if (rate >= 70) {
-      rateEl.classList.add("agent-rate-warning");
-    } else {
-      rateEl.classList.add("agent-rate-danger");
-    }
-  }
-}
-
-/**
- * Libellé priorité.
- */
-function getPriorityLabel(priority) {
-  if (priority === "haute") return "Haute";
-  if (priority === "urgente") return "Urgente";
-  return "Normale";
-}
+</body>
+</html>
