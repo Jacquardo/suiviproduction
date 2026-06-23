@@ -141,7 +141,7 @@ function handleLogout() {
  * Charger toutes les données admin.
  */
 async function loadAdminData() {
-  allAgents = await getAgents();
+  allAgents     = await getAgents();
   allProduction = await getProduction();
 
   renderAgentsTable(allAgents);
@@ -149,8 +149,12 @@ async function loadAdminData() {
   renderProductionTable(allProduction);
   renderFilters(allAgents, allProduction);
   updateKpis(allProduction);
-
   setDefaultProgramDate();
+
+  // NOUVEAU : rend les graphiques
+  if (typeof renderCharts === "function") {
+    renderCharts(allProduction);
+  }
 }
 
 /**
@@ -350,10 +354,10 @@ function applyProductionFilters() {
     filteredRows = filteredRows.filter(row => row.team === filterTeam);
   }
 
-  renderProductionTable(filteredRows);
-  updateKpis(filteredRows);
+  if (typeof renderCharts === "function") {
+    renderCharts(filteredRows);
+  }
 }
-
 /**
  * Réinitialiser les filtres.
  */
