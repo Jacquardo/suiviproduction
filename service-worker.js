@@ -24,6 +24,10 @@ const FILES_TO_CACHE = [
   "./data/agents.json",
   "./data/production.json",
   "./data/programmes.json",
+   "./data/categories.json",
+"./js/production-entry.js",
+"./js/charts.js",
+"./css/additions.css"
 
   "./manifest.json",
 
