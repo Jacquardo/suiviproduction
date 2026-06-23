@@ -3,164 +3,214 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>Espace agent - Suivi Production ARC+</title>
-
+  <title>Espace Utilisateur — Suivi Production ARC+</title>
   <link rel="stylesheet" href="./css/style.css" />
   <link rel="stylesheet" href="./css/agent.css" />
-  <link rel="manifest" href="./manifest.json" />
-
-  <meta name="theme-color" content="#2563eb" />
+  <link rel="stylesheet" href="./css/additions.css" />
 </head>
 <body>
-  <header class="agent-header">
+
+<!-- HEADER -->
+<header class="agent-header">
+  <div class="agent-header-brand">
+    <div class="agent-header-icon">👤</div>
     <div>
       <h1>Espace utilisateur</h1>
-      <p>Programme, production personnelle et indicateurs</p>
+      <p>Programme, production et informations personnelles</p>
     </div>
+  </div>
+  <nav class="agent-nav">
+    <!-- Cloche de notification -->
+    <div id="agentHeaderBadge" class="notif-bell hidden">
+      🔔 <span id="headerNotifBadge" class="notif-count hidden">0</span>
+    </div>
+    <!-- Info utilisateur -->
+    <div class="user-badge">
+      <img id="agentHeaderPhoto" src="" alt="" class="user-badge-photo hidden" />
+      <span id="agentHeaderName"></span>
+    </div>
+    <a href="./index.html">Accueil</a>
+    <button id="agentLogoutBtn" type="button">Déconnexion</button>
+  </nav>
+</header>
 
-    <nav class="agent-nav">
-      <a href="./index.html">Accueil</a>
-      <button id="agentLogoutBtn" type="button">Déconnexion</button>
-    </nav>
-  </header>
+<!-- ÉCRAN DE CONNEXION -->
+<section class="auth-page-section" id="agentLoginSection">
+  <div class="auth-modal">
+    <div class="auth-modal-icon">🔑</div>
+    <h2>Connexion</h2>
+    <p>Connectez-vous avec votre compte Google pour accéder à votre espace.</p>
+    <button id="agentGoogleSignInBtn" class="google-btn">
+      <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" width="20" />
+      Se connecter avec Google
+    </button>
+    <p id="agentLoginMessage" class="message"></p>
+  </div>
+</section>
 
-  <main class="agent-container">
+<!-- CONTENU AGENT -->
+<div id="agentContent" class="hidden">
+  <div class="agent-container">
 
-    <!-- Connexion agent -->
-    <section class="agent-section" id="agentLoginSection">
-      <div class="section-header">
-        <h2>Connexion agent</h2>
-        <p>Saisissez votre email pour accéder à votre espace personnel.</p>
+    <!-- Carte de bienvenue -->
+    <section class="agent-welcome-card">
+      <div>
+        <span class="welcome-label">Bienvenue</span>
+        <h2 id="agentWelcomeName">Agent</h2>
+        <p id="agentTeamName">Équipe : -</p>
       </div>
-
-      <div class="agent-login-box">
-        <label for="agentEmail">Email agent</label>
-        <input
-          type="email"
-          id="agentEmail"
-          placeholder="exemple: agent1@keobiz.fr"
-        />
-
-        <button id="agentLoginBtn" type="button" class="primary-button">
-          Se connecter
-        </button>
-
-        <p id="agentLoginMessage" class="message"></p>
+      <div class="today-box">
+        <span>Aujourd'hui</span>
+        <strong id="todayDateLabel">-</strong>
       </div>
     </section>
 
-    <!-- Contenu agent -->
-    <section id="agentContent" class="hidden">
+    <!-- NAVIGATION PAR ONGLETS -->
+    <nav class="agent-tabs">
+      <button class="agent-tab-btn" data-target="agentTabKpis">📊 Indicateurs</button>
+      <button class="agent-tab-btn" data-target="agentTabProgramme">📅 Programme</button>
+      <button class="agent-tab-btn" data-target="agentTabAnnouncements">
+        📢 Annonces <span id="announcementsCount" class="tab-badge" style="display:none;">0</span>
+      </button>
+      <button class="agent-tab-btn" data-target="agentTabMessages">
+        ✉️ Messages <span id="messagesCount" class="tab-badge" style="display:none;">0</span>
+      </button>
+      <button class="agent-tab-btn" data-target="agentTabSections">📄 Informations</button>
+      <button class="agent-tab-btn" data-target="agentTabProduction">✏️ Ma production</button>
+    </nav>
 
-      <!-- Bienvenue -->
-      <section class="agent-welcome-card">
-        <div>
-          <span class="welcome-label">Bienvenue</span>
-          <h2 id="agentWelcomeName">Agent</h2>
-          <p id="agentTeamName">Équipe : -</p>
-        </div>
-
-        <div class="today-box">
-          <span>Aujourd’hui</span>
-          <strong id="todayDateLabel">-</strong>
-        </div>
-      </section>
-
-      <!-- Indicateurs simples -->
+    <!-- =================== ONGLET INDICATEURS =================== -->
+    <div id="agentTabKpis" class="agent-tab-panel hidden">
       <section class="agent-section">
         <div class="section-header">
           <h2>Mes indicateurs</h2>
           <p>Résumé rapide de votre production.</p>
         </div>
-
         <div class="agent-kpi-grid">
           <div class="agent-kpi-card">
             <span>Production du jour</span>
             <strong id="agentKpiToday">0</strong>
           </div>
-
           <div class="agent-kpi-card">
             <span>Objectif du jour</span>
             <strong id="agentKpiTarget">0</strong>
           </div>
-
           <div class="agent-kpi-card">
-            <span>Taux d’atteinte</span>
+            <span>Taux d'atteinte</span>
             <strong id="agentKpiRate">0%</strong>
           </div>
-
           <div class="agent-kpi-card">
             <span>Total historique</span>
             <strong id="agentKpiTotal">0</strong>
           </div>
         </div>
       </section>
+    </div>
 
-      <!-- Programme du jour -->
+    <!-- =================== ONGLET PROGRAMME =================== -->
+    <div id="agentTabProgramme" class="agent-tab-panel hidden">
       <section class="agent-section">
         <div class="section-header">
           <h2>Mon programme</h2>
-          <p>Programme publié par le manager.</p>
+          <p>Programme publié par le manager pour aujourd'hui.</p>
         </div>
-
         <div id="agentProgramCard" class="program-card">
-          <p class="empty-message">
-            Aucun programme disponible pour aujourd’hui.
-          </p>
+          <p class="empty-message">Aucun programme disponible pour aujourd'hui.</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- =================== ONGLET ANNONCES =================== -->
+    <div id="agentTabAnnouncements" class="agent-tab-panel hidden">
+      <section class="agent-section">
+        <div class="section-header">
+          <h2>Annonces</h2>
+          <p>Informations publiées par l'administration.</p>
+        </div>
+        <div id="agentAnnouncementsList">
+          <p class="empty-message">Chargement…</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- =================== ONGLET MESSAGES =================== -->
+    <div id="agentTabMessages" class="agent-tab-panel hidden">
+      <section class="agent-section">
+        <div class="section-header">
+          <h2>Mes messages</h2>
+          <p>Messages reçus de l'administration.</p>
+        </div>
+        <div id="agentMessagesList">
+          <p class="empty-message">Chargement…</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- =================== ONGLET SECTIONS / INFORMATIONS =================== -->
+    <div id="agentTabSections" class="agent-tab-panel hidden">
+      <section class="agent-section">
+        <div class="section-header">
+          <h2>Informations</h2>
+          <p>Documents et ressources mis à disposition par l'administration.</p>
+        </div>
+        <div id="agentSectionsList">
+          <p class="empty-message">Chargement…</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- =================== ONGLET PRODUCTION =================== -->
+    <div id="agentTabProduction" class="agent-tab-panel hidden">
+
+      <section class="agent-section">
+        <div class="section-header">
+          <h2>📝 Saisir ma production du jour</h2>
+          <p>Sélectionnez une désignation, une affectation et entrez la quantité traitée.</p>
+        </div>
+        <div id="productionEntryContainer">
+          <p class="empty-message">Chargement du formulaire…</p>
         </div>
       </section>
 
-      <!-- Saisie de production du jour -->
-<section class="agent-section">
-  <div class="section-header">
-    <h2>📝 Saisir ma production du jour</h2>
-    <p>Sélectionnez une désignation, une affectation et entrez la quantité traitée.</p>
-  </div>
-  <div id="productionEntryContainer">
-    <p class="empty-message">Chargement du formulaire...</p>
-  </div>
-</section>
-      
-      <!-- Tableau personnel -->
       <section class="agent-section">
         <div class="section-header">
           <h2>Mon tableau de production</h2>
-          <p>Votre suivi personnel, généré en HTML, CSS et JavaScript.</p>
+          <p>Votre suivi personnel de production.</p>
         </div>
-
         <div class="table-wrapper">
           <table class="data-table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Activité</th>
-                <th>Quantité</th>
-                <th>Source</th>
+                <th>Date</th><th>Activité</th><th>Quantité</th><th>Source</th>
               </tr>
             </thead>
-
             <tbody id="agentProductionTableBody">
-              <tr>
-                <td colspan="4" class="empty-table">
-                  Aucune production disponible.
-                </td>
-              </tr>
+              <tr><td colspan="4" class="empty-table">Aucune production disponible.</td></tr>
             </tbody>
           </table>
         </div>
       </section>
 
-    </section>
-  </main>
+    </div>
 
-  <footer class="app-footer">
-    <p>Suivi Production ARC+ - Espace utilisateur</p>
-  </footer>
+  </div><!-- /agent-container -->
+</div><!-- /agentContent -->
+
+<footer class="app-footer">
+  <p>Suivi Production ARC+ &nbsp;·&nbsp; Espace utilisateur</p>
+</footer>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<!-- App -->
+<script src="./js/firebase-config.js"></script>
+<script src="./js/auth.js"></script>
 <script src="./js/app.js"></script>
 <script src="./js/api.js"></script>
 <script src="./js/production-entry.js"></script>
 <script src="./js/agent.js"></script>
-  
+
 </body>
 </html>
