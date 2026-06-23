@@ -3,7 +3,7 @@
    Suivi Production ARC+
 ========================= */
 
-const CACHE_NAME = "suivi-production-arc-v1";
+const CACHE_NAME = "suivi-production-arc-v2";
 
 const FILES_TO_CACHE = [
   "./",
