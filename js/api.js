@@ -52,6 +52,16 @@ async function saveAgent(agentData) {
   return { success: true, id: ref.id };
 }
 
+async function updateAgentById(id, data) {
+  await getDb().collection("agents").doc(id).update(data);
+  return { success: true };
+}
+
+async function deleteAgent(id) {
+  await getDb().collection("agents").doc(id).delete();
+  return { success: true };
+}
+
 /* ================================================
    PRODUCTION
 ================================================ */
