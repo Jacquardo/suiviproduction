@@ -516,23 +516,123 @@ function renderAgentSelects(agents) {
   });
 }
 
+/* ---- Remplacez renderAgentsTable() par ceci ---- */
+
 function renderAgentsTable(agents) {
   const tbody = document.getElementById("agentsTableBody");
   if (!tbody) return;
   const visible = agents.filter(a => a.role !== "admin");
   if (!visible.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty-table">Aucun agent enregistré.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-table">Aucun agent enregistré.</td></tr>`;
     return;
   }
   tbody.innerHTML = visible.map(a => `
-    <tr>
-      <td>${a.id || "-"}</td>
-      <td>${a.name || "-"}</td>
+    <tr class="${a.active ? "" : "row-inactive"}">
+      <td><strong>${a.name || "-"}</strong></td>
       <td>${a.email || "-"}</td>
       <td>${a.team || "-"}</td>
-      <td><span class="${a.active ? "status-active" : "status-inactive"}">${a.active ? "Actif" : "Inactif"}</span></td>
+      <td><span class="role-badge role-${a.role || "agent"}">${a.role === "admin" ? "Admin" : "Agent"}</span></td>
+      <td><span class="${a.active ? "status-active" : "status-inactive"}">${a.active ? "✅ Actif" : "🚫 Inactif"}</span></td>
+      <td class="actions-cell">
+        <button class="secondary-button btn-sm" onclick="editAgent('${a.id}')">✏️ Modifier</button>
+        <button class="secondary-button btn-sm" onclick="toggleAgentActive('${a.id}', ${!a.active})">
+          ${a.active ? "🚫 Désactiver" : "✅ Activer"}
+        </button>
+        <button class="danger-button btn-sm" onclick="confirmDeleteAgent('${a.id}', '${(a.name || a.email).replace(/'/g, "\\'")}')">🗑️</button>
+      </td>
     </tr>
   `).join("");
+}
+
+/* ---- Nouvelles fonctions à ajouter ---- */
+
+async function handleSaveAgent(event) {
+  event.preventDefault();
+  const status  = document.getElementById("agentFormStatus");
+  const editId  = document.getElementById("agentEditId")?.value || "";
+  const agentData = {
+    name:   document.getElementById("agentName")?.value.trim()   || "",
+    email:  document.getElementById("agentEmail")?.value.trim().toLowerCase() || "",
+    team:   document.getElementById("agentTeam")?.value.trim()   || "ARC+",
+    role:   document.getElementById("agentRole")?.value          || "agent",
+    active: document.getElementById("agentActiveSelect")?.value  === "true"
+  };
+
+  if (!agentData.name || !agentData.email) {
+    status.textContent = "Le nom et l'email sont obligatoires.";
+    status.className   = "message error full-width";
+    return;
+  }
+
+  status.textContent = "Enregistrement en cours…";
+  status.className   = "message full-width";
+
+  let result;
+  if (editId) {
+    // Mise à jour par ID
+    result = await updateAgentById(editId, agentData);
+  } else {
+    // Création ou mise à jour par email
+    result = await saveAgent(agentData);
+  }
+
+  if (result.success) {
+    status.textContent = editId ? "Agent mis à jour avec succès." : "Agent ajouté avec succès.";
+    status.className   = "message success full-width";
+    resetAgentForm();
+    allAgents = await getAgents();
+    renderAgentsTable(allAgents);
+    renderAgentSelects(allAgents);
+    renderFilters(allAgents, allProduction);
+    updateKpis(allProduction);
+  } else {
+    status.textContent = "Erreur lors de l'enregistrement.";
+    status.className   = "message error full-width";
+  }
+}
+
+function editAgent(id) {
+  const a = allAgents.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById("agentEditId").value         = a.id;
+  document.getElementById("agentName").value           = a.name  || "";
+  document.getElementById("agentEmail").value          = a.email || "";
+  document.getElementById("agentEmail").readOnly       = true; // empêche de changer l'email en édition
+  document.getElementById("agentTeam").value           = a.team  || "ARC+";
+  document.getElementById("agentRole").value           = a.role  || "agent";
+  document.getElementById("agentActiveSelect").value   = a.active !== false ? "true" : "false";
+  setEl("agentFormTitle", "✏️ Modifier l'agent");
+  document.getElementById("agentForm")?.scrollIntoView({ behavior: "smooth" });
+}
+
+function resetAgentForm() {
+  document.getElementById("agentForm")?.reset();
+  const editId = document.getElementById("agentEditId");
+  if (editId) editId.value = "";
+  const emailField = document.getElementById("agentEmail");
+  if (emailField) emailField.readOnly = false;
+  const teamField = document.getElementById("agentTeam");
+  if (teamField) teamField.value = "ARC+";
+  setEl("agentFormTitle", "➕ Ajouter un agent");
+  const status = document.getElementById("agentFormStatus");
+  if (status) { status.textContent = ""; status.className = "message full-width"; }
+}
+
+async function toggleAgentActive(id, active) {
+  await updateAgentById(id, { active });
+  allAgents = await getAgents();
+  renderAgentsTable(allAgents);
+  updateKpis(allProduction);
+}
+
+async function confirmDeleteAgent(id, name) {
+  if (!confirm(`Supprimer l'agent "${name}" ? Cette action est irréversible.`)) return;
+  await deleteAgent(id);
+  allAgents = await getAgents();
+  renderAgentsTable(allAgents);
+  renderAgentSelects(allAgents);
+  renderFilters(allAgents, allProduction);
+  updateKpis(allProduction);
 }
 
 function applyProductionFilters() {
@@ -610,6 +710,8 @@ async function handleSaveProgramme(event) {
 ================================================ */
 
 function bindAdminEvents() {
+   document.getElementById("agentForm")?.addEventListener("submit", handleSaveAgent);
+document.getElementById("agentFormResetBtn")?.addEventListener("click",  resetAgentForm);
   document.getElementById("previewExcelBtn")?.addEventListener("click",  previewExcelImport);
   document.getElementById("saveExcelBtn")?.addEventListener("click",     savePreviewedExcelRows);
   document.getElementById("applyFiltersBtn")?.addEventListener("click",  applyProductionFilters);
