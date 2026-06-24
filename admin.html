@@ -219,22 +219,74 @@
 
     <!-- =================== ONGLET AGENTS =================== -->
     <div id="tabAgents" class="admin-tab-panel hidden">
+
+      <!-- FORMULAIRE AJOUT / ÉDITION -->
       <section class="admin-section">
         <div class="section-header">
-          <h2>Liste des agents</h2>
-          <p>Agents enregistrés dans Firestore (créés automatiquement à la première connexion).</p>
+          <h2 id="agentFormTitle">➕ Ajouter un agent</h2>
+          <p>Remplissez les informations pour enregistrer un agent dans Firestore.</p>
+        </div>
+        <form id="agentForm" class="program-form">
+          <input type="hidden" id="agentEditId" />
+          <div class="form-group">
+            <label for="agentName">Nom complet *</label>
+            <input type="text" id="agentName" placeholder="Ex : Jean Dupont" required />
+          </div>
+          <div class="form-group">
+            <label for="agentEmail">Email Google *</label>
+            <input type="email" id="agentEmail" placeholder="jean.dupont@keobiz.fr" required />
+          </div>
+          <div class="form-group">
+            <label for="agentTeam">Équipe</label>
+            <input type="text" id="agentTeam" placeholder="ARC+" value="ARC+" />
+          </div>
+          <div class="form-group">
+            <label for="agentRole">Rôle</label>
+            <select id="agentRole">
+              <option value="agent">Agent</option>
+              <option value="admin">Administrateur</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="agentActiveSelect">Statut</label>
+            <select id="agentActiveSelect">
+              <option value="true">✅ Actif</option>
+              <option value="false">🚫 Inactif</option>
+            </select>
+          </div>
+          <div class="form-actions full-width">
+            <button type="submit" class="primary-button">💾 Enregistrer</button>
+            <button type="button" id="agentFormResetBtn" class="secondary-button">✕ Annuler</button>
+          </div>
+          <p id="agentFormStatus" class="message full-width"></p>
+        </form>
+      </section>
+
+      <!-- LISTE DES AGENTS -->
+      <section class="admin-section">
+        <div class="section-header">
+          <h2>👥 Liste des agents</h2>
+          <p>Agents enregistrés dans Firestore.</p>
         </div>
         <div class="table-wrapper">
           <table class="data-table">
             <thead>
-              <tr><th>ID</th><th>Nom</th><th>Email</th><th>Équipe</th><th>Statut</th></tr>
+              <tr>
+                <th>Nom</th>
+                <th>Email</th>
+                <th>Équipe</th>
+                <th>Rôle</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
             </thead>
             <tbody id="agentsTableBody">
-              <tr><td colspan="5" class="empty-table">Aucun agent chargé.</td></tr>
+              <tr><td colspan="6" class="empty-table">Aucun agent chargé.</td></tr>
             </tbody>
           </table>
         </div>
       </section>
+
     </div>
 
     <!-- =================== ONGLET SECTIONS =================== -->
